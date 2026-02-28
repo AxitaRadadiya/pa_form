@@ -15,7 +15,7 @@ class FoodSeeder extends Seeder
         $now = now();
 
         DB::table('foods')->insert([
-            ['name' => 'Jain', 'created_at' => $now, 'updated_at' => $now],
+            ['name' => 'Jain/Swaminarayan', 'created_at' => $now, 'updated_at' => $now],
             ['name' => 'Regular', 'created_at' => $now, 'updated_at' => $now],
         ]);
     }

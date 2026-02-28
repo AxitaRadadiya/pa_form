@@ -131,14 +131,18 @@
             @if($registrations->isNotEmpty())
             <div class="no-print">
                 @if(isset($selectedEvent) && $selectedEvent)
-                    <a href="{{ route('reports.event.export', ['event_id' => $selectedEvent->id]) }}"
+                    {{-- Excel Export (PA Form format) --}}
+                    <a href="{{ route('reports.event.exportExcel', array_filter(['event_id' => $selectedEvent->id, 'chapter_id' => request('chapter_id'), 'mobile' => request('mobile')])) }}"
                        class="btn btn-sm btn-success mr-2">
-                        <i class="mdi mdi-file-excel mr-1"></i> Export CSV
+                        <i class="mdi mdi-file-excel mr-1"></i> Export Excel (PA Format)
+                    </a>
+                @else
+                    {{-- Export all without event filter --}}
+                    <a href="{{ route('reports.event.exportExcel', array_filter(['chapter_id' => request('chapter_id'), 'mobile' => request('mobile')])) }}"
+                       class="btn btn-sm btn-success mr-2">
+                        <i class="mdi mdi-file-excel mr-1"></i> Export Excel (PA Format)
                     </a>
                 @endif
-                <button onclick="window.print()" class="btn btn-sm btn-outline-secondary">
-                    <i class="mdi mdi-printer mr-1"></i> Print
-                </button>
             </div>
             @endif
         </div>
@@ -160,6 +164,30 @@
                             </option>
                         @endforeach
                     </select>
+                    
+                    {{-- Chapter filter --}}
+                    <label class="mr-2 font-weight-600" style="font-size:.85rem;color:#251c4b;">
+                        <i class="mdi mdi-map-marker mr-1"></i> Chapter:
+                    </label>
+                     <select id="chapter_id" name="chapter_id" class="form-control">
+                                            <option value="">— Select Chapter —</option>
+                                            @if(isset($chapters))
+                                                @foreach($chapters as $c)
+                                                    <option value="{{ $c->id }}"
+                                                        {{ old('chapter_id') == $c->id ? 'selected' : '' }}>
+                                                        {{ $c->name }}
+                                                    </option>
+                                                @endforeach
+                                            @endif
+                                        </select>
+
+                    {{-- Mobile search --}}
+                    <div class="input-group mr-3" style="min-width:220px;">
+                        <input type="text" name="mobile" class="form-control" placeholder="Search mobile number" value="{{ request('mobile') }}">
+                        <div class="input-group-append">
+                            <button class="btn btn-sm btn-outline-primary" type="submit"><i class="mdi mdi-magnify"></i></button>
+                        </div>
+                    </div>
                     <button type="submit" class="btn btn-sm" style="background:#251c4b;color:#fff;">
                         <i class="mdi mdi-magnify mr-1"></i> View Report
                     </button>
@@ -250,7 +278,7 @@
                     <thead style="background:#f1f3f9;">
                         <tr>
                             <th>#</th>
-                            <th>Company / Registered By</th>
+                            <th>Company / PA Member</th>
                             <th>Chapter</th>
                             <th>Member Name</th>
                             <th>Mobile</th>
@@ -277,7 +305,7 @@
                                 <td>{{ $regSerial }}</td>
                                 <td>
                                     <div class="reg-company">{{ $reg->company_name ?? '—' }}</div>
-                                    <div class="reg-meta">{{ $reg->user?->name }}</div>
+                                    <div class="reg-meta">{{ trim(($reg->first_name ?? '') . ' ' . ($reg->last_name ?? '')) ?: '—' }}</div>
                                 </td>
                                 <td class="reg-meta">{{ $reg->chapter?->name ?? '—' }}</td>
                                 <td colspan="7" class="text-muted" style="font-size:.78rem;">No members added</td>
@@ -291,7 +319,7 @@
                                     <td rowspan="{{ $rowCount }}">{{ $regSerial }}</td>
                                     <td rowspan="{{ $rowCount }}">
                                         <div class="reg-company">{{ $reg->company_name ?? '—' }}</div>
-                                        <div class="reg-meta">{{ $reg->user?->name }}</div>
+                                        <div class="reg-meta">{{ trim(($reg->first_name ?? '') . ' ' . ($reg->last_name ?? '')) }}</div>
                                     </td>
                                     <td rowspan="{{ $rowCount }}" class="reg-meta">{{ $reg->chapter?->name ?? '—' }}</td>
                                     @endif
@@ -381,7 +409,7 @@
                             <td>{{ $i + 1 }}</td>
                             <td>
                                 <div class="reg-company">{{ $reg->company_name ?? '—' }}</div>
-                                <div class="reg-meta">{{ $reg->user?->name }}</div>
+                                <div class="reg-meta">{{ trim(($reg->first_name ?? '') . ' ' . ($reg->last_name ?? '')) }}</div>
                             </td>
                             <td>
                                 {{ trim(($a->first_name ?? '') . ' ' . ($a->last_name ?? '')) ?: '—' }}

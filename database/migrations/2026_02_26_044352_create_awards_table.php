@@ -14,13 +14,13 @@ return new class extends Migration {
             $table->string('award_name')->nullable();
             $table->string('first_name')->nullable();
             $table->string('last_name')->nullable();
-            $table->string('other_award_name')->nullable();
+            $table->string('gender')->nullable();
             $table->string('award_type')->nullable();
             $table->string('photo_attached')->nullable();
             $table->foreignId('food_id')->nullable()->constrained('foods')->nullOnDelete();
             $table->foreignId('relation_id')->nullable()->constrained('relations')->nullOnDelete();
             $table->decimal('amount_section3', 10, 2)->nullable();
-            $table->string('amount')->nullable();
+            $table->decimal('amount', 10, 2)->nullable();
             $table->timestamps();
         });
     }

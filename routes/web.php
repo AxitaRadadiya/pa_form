@@ -10,6 +10,9 @@ use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\EventReportController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Auth\RoleCheckController;
+use App\Http\Controllers\Auth\UserLoginController;
+use App\Http\Controllers\ImageController;
 
 Route::get('/clear-caches', function () {
     
@@ -90,6 +93,8 @@ Route::middleware('auth')->group(function () {
     Route::get('activity/{id}', [ActivityController::class, 'show'])->name('activity.show');
     Route::get('/reports/event',[EventReportController::class, 'index'])->name('reports.event');
     Route::get('/reports/event/export', [EventReportController::class, 'export'])->name('reports.event.export');
+    Route::get('/reports/event/export-excel', [EventReportController::class, 'exportExcel'])
+        ->name('reports.event.exportExcel');
         Route::get('password/change', [\App\Http\Controllers\Auth\PasswordController::class, 'edit'])->name('password.change');
 });
 
@@ -107,3 +112,12 @@ Route::get('registrations/debug', function () {
 });
 
 require __DIR__.'/auth.php';
+
+// AJAX: check role by email (used by two-step login form)
+Route::post('/check-role', [RoleCheckController::class, 'checkRole']);
+
+// User login via email + mobile (regular users)
+Route::post('/user-login', [UserLoginController::class, 'loginWithMobile']);
+
+// Serve storage images when public/storage symlink is missing. Path is URL-safe base64.
+Route::get('/storage-image/{encoded}', [ImageController::class, 'storageImage'])->where('encoded', '.*')->name('storage.image');

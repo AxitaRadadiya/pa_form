@@ -147,10 +147,20 @@ class EventController extends Controller
                 . '<button class="btn btn-sm btn-danger" type="submit" title="Delete"><i class="mdi mdi-delete"></i></button>'
                 . '</form>';
 
+            // Prefer the storage disk URL when file exists, otherwise fallback to a placeholder
+            $imageUrl = null;
+            if (!empty($event->image) && Storage::disk('public')->exists($event->image)) {
+                $imageUrl = Storage::disk('public')->url($event->image);
+            }
+            $qrUrl = null;
+            if (!empty($event->qr_code) && Storage::disk('public')->exists($event->qr_code)) {
+                $qrUrl = Storage::disk('public')->url($event->qr_code);
+            }
+
             return [
                 'id' => $event->id,
-                'image' => $event->image ? asset('storage/' . $event->image) : null,
-                'qr_code' => $event->qr_code ? asset('storage/' . $event->qr_code) : null,
+                'image' => $imageUrl ?? asset('newAdmin/images/pa.png'),
+                'qr_code' => $qrUrl ?? null,
                 'name' => $event->name,
                 'description' => $event->description,
                 'action' => $action,

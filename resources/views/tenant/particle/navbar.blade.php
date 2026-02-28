@@ -3,10 +3,10 @@
   <div class="navbar-brand-box d-flex align-items-left">
       <a href="{{route('dashboard')}}" class="logo">
           <span>
-              <img src="{{ asset('newAdmin/images/logo-light.png') }}" alt="" height="18">
+              <img src="{{ file_exists(public_path('newAdmin/images/logo-light.png')) ? asset('newAdmin/images/logo-light.png') : asset('newAdmin/images/pa.png') }}" alt="" height="18">
           </span>
           <i>
-              <img src="{{ asset('newAdmin/images/logo-small.png') }}" alt="" height="24">
+              <img src="{{ file_exists(public_path('newAdmin/images/logo-small.png')) ? asset('newAdmin/images/logo-small.png') : asset('newAdmin/images/pa.png') }}" alt="" height="24">
           </i>
       </a>
 
@@ -38,7 +38,7 @@
               <div data-simplebar style="max-height: 230px;">
                   <a href="" class="text-reset notification-item">
                       <div class="media">
-                          <img src="{{ asset('newAdmin/images/users/avatar-2.jpg') }}"
+                          <img src="{{ file_exists(public_path('newAdmin/images/users/avatar-2.jpg')) ? asset('newAdmin/images/users/avatar-2.jpg') : asset('newAdmin/images/pa.png') }}"
                               class="mr-3 rounded-circle avatar-xs" alt="user-pic">
                           <div class="media-body">
                               <h6 class="mt-0 mb-1">Samuel Coverdale</h6>
@@ -63,7 +63,7 @@
                   </a>
                   <a href="" class="text-reset notification-item">
                       <div class="media">
-                          <img src="{{ asset('newAdmin/images/users/avatar-3.jpg') }}"
+                          <img src="{{ file_exists(public_path('newAdmin/images/users/avatar-3.jpg')) ? asset('newAdmin/images/users/avatar-3.jpg') : asset('newAdmin/images/pa.png') }}"
                               class="mr-3 rounded-circle avatar-xs" alt="user-pic">
                           <div class="media-body">
                               <h6 class="mt-0 mb-1">Victoria Mendis</h6>
@@ -84,7 +84,7 @@
       <div class="dropdown d-inline-block ml-2">
           <button type="button" class="btn header-item waves-effect waves-light" id="page-header-user-dropdown"
               data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              <img class="rounded-circle header-profile-user" src="{{ asset('newAdmin/images/users/avatar-1.jpg') }}"
+              <img class="rounded-circle header-profile-user" src="{{ file_exists(public_path('newAdmin/images/users/avatar-1.jpg')) ? asset('newAdmin/images/users/avatar-1.jpg') : asset('newAdmin/images/pa.png') }}"
                   alt="Header Avatar">
               <span class="d-none d-sm-inline-block ml-1">{{ ucfirst (Auth()->user()->name) }}</span>
               <i class="mdi mdi-chevron-down d-none d-sm-inline-block"></i>

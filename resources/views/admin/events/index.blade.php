@@ -34,6 +34,7 @@
                             <th>Sr No.</th>
                             <th>Event Name</th>
                             <th>Image</th>
+                            <th>QR</th>
                             <th>Note</th>
                             <th>Actions</th>
                         </tr>
@@ -45,6 +46,7 @@
                             <th>Sr No.</th>
                             <th>Event Name</th>
                             <th>Image</th>
+                            <th>QR</th>
                             <th>Note</th>
                             <th>Actions</th>
                         </tr>

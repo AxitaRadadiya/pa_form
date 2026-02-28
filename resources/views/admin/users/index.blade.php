@@ -72,35 +72,25 @@
                 <div class="modal-body">
                     <div class="form-row">
                         <div class="form-group col-md-6">
-                            <label>First Name</label>
+                            <label>First Name <span class="text-danger">*</span></label>
                             <input name="first_name" class="form-control" required>
                         </div>
                         <div class="form-group col-md-6">
-                            <label>Last Name</label>
+                            <label>Last Name <span class="text-danger">*</span></label>
                             <input name="last_name" class="form-control" required>
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group col-md-6">
-                            <label>Mobile</label>
-                            <input name="mobile" class="form-control">
+                            <label>Mobile <span class="text-danger">*</span></label>
+                            <input name="mobile" class="form-control" required>
                         </div>
                         <div class="form-group col-md-6">
-                            <label>Email</label>
+                            <label>Email <span class="text-danger">*</span></label>
                             <input name="email" type="email" class="form-control" required>
                         </div>
                     </div>
-                    <div class="form-row">
-                        <div class="form-group col-md-6">
-                            <label>Password</label>
-                            <input name="password" type="password" class="form-control" required>
-                        </div>
-                        <div class="form-group col-md-6">
-                            <label>Confirm Password</label>
-                            <input name="password_confirmation" type="password" class="form-control" required>
-                        </div>
-                    </div>
-                </div>
+
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                     <button type="submit" class="btn btn-primary">Save</button>

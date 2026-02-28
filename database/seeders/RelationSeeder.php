@@ -18,7 +18,8 @@ class RelationSeeder extends Seeder
         $now = now();
 
         DB::table('relations')->insert([
-            ['name' => 'Members', 'created_at' => $now, 'updated_at' => $now],
+            ['name' => 'PA-Members', 'created_at' => $now, 'updated_at' => $now],
+            ['name' => 'Business Partner', 'created_at' => $now, 'updated_at' => $now],
             ['name' => 'Wife', 'created_at' => $now, 'updated_at' => $now],
             ['name' => 'Child', 'created_at' => $now, 'updated_at' => $now],
             ['name' => 'Future Partner', 'created_at' => $now, 'updated_at' => $now],

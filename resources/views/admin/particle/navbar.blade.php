@@ -22,13 +22,15 @@
                         </span>
                             <i class="mdi mdi-chevron-down d-none d-sm-inline-block"></i>
                     </button>
-                    <div class="dropdown-menu dropdown-menu-right">
-                    <!-- <a class="dropdown-item d-flex align-items-center justify-content-between" href="#">
-                      <span>Profile</span>
-                  </a>-->
+                        <div class="dropdown-menu dropdown-menu-right">
+                        <!-- <a class="dropdown-item d-flex align-items-center justify-content-between" href="#">
+                          <span>Profile</span>
+                      </a>-->
+                            @if(optional(auth()->user())->role === 'admin')
                             <a class="dropdown-item d-flex align-items-center justify-content-between" href="{{ route('password.change') }}">
-                                    <span>Change Password</span>
+                                <span>Change Password</span>
                             </a>
+                            @endif
                             <div class="dropdown-divider"></div>
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf

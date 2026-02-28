@@ -13,17 +13,18 @@ class Award extends Model
         'award_name',
         'first_name',
         'last_name',
-        'other_award_name',
         'award_type',
         'photo_attached',
         'food_id',
         'relation_id',
         'amount_section3',
         'amount',
+        'gender',
     ];
 
     protected $casts = [
         'amount_section3' => 'decimal:2',
+        'amount' => 'decimal:2',
     ];
 
     // ---------- Relationships ----------

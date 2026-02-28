@@ -120,7 +120,7 @@ class RegistrationController extends Controller
             'member_first_name'      => 'nullable|string|max:255',
             'member_last_name'       => 'nullable|string|max:255',
             'award_name'             => 'nullable|string|max:255',
-            'other_award_name'       => 'nullable|string|max:255',
+            'gender'                 => 'nullable|string|max:255',
             'award_type'             => 'nullable|string|in:certificate,award',
             'photo_attached'         => 'nullable|image|max:2048',
             'food_id_section3'       => 'nullable|integer|exists:foods,id',
@@ -190,18 +190,18 @@ class RegistrationController extends Controller
             // 3. Create Award (Section 3) — only if any award field is filled
             if ($this->hasAwardData($request)) {
                 Award::create([
-                    'registration_id'    => $reg->id,
+                    'registration_id'      => $reg->id,
                     'section3_description' => $request->input('section3_description'),
-                    'first_name'         => $request->input('member_first_name'),
-                    'last_name'          => $request->input('member_last_name'),
-                    'award_name'         => $request->input('award_name'),
-                    'other_award_name'   => $request->input('other_award_name'),
-                    'award_type'         => $request->input('award_type'),
-                    'photo_attached'     => $files['photo_attached'] ?? null,
-                    'food_id'            => $request->input('food_id_section3'),
-                    'relation_id'        => $request->input('relation_id_section3'),
-                    'amount_section3'    => $amountSection3,
-                    'amount'             => $request->input('special_comment'),
+                    'first_name'           => $request->input('member_first_name'),
+                    'last_name'            => $request->input('member_last_name'),
+                    'award_name'           => $request->input('award_name'),
+                    'gender'               => $request->input('gender'),
+                    'award_type'           => $request->input('award_type'),
+                    'photo_attached'       => $files['photo_attached'] ?? null,
+                    'food_id'              => $request->input('food_id_section3'),
+                    'relation_id'          => $request->input('relation_id_section3'),
+                    'amount_section3'      => $amountSection3,
+                    'special_comment'      => $request->input('special_comment'),
                 ]);
             }
             
@@ -278,7 +278,7 @@ class RegistrationController extends Controller
             'member_first_name'      => 'nullable|string|max:255',
             'member_last_name'       => 'nullable|string|max:255',
             'award_name'             => 'nullable|string|max:255',
-            'other_award_name'       => 'nullable|string|max:255',
+            'gender'                 => 'nullable|string|max:255',
             'award_type'             => 'nullable|string|in:certificate,award',
             'photo_attached'         => 'nullable|image|max:2048',
             'food_id_section3'       => 'nullable|integer|exists:foods,id',
@@ -345,14 +345,14 @@ class RegistrationController extends Controller
                 'section3_description' => $request->input('section3_description'),
                 'first_name'           => $request->input('member_first_name'),
                 'last_name'            => $request->input('member_last_name'),
+                'gender'               => $request->input('gender'),
                 'award_name'           => $request->input('award_name'),
-                'other_award_name'     => $request->input('other_award_name'),
                 'award_type'           => $request->input('award_type'),
                 'photo_attached'       => $files['photo_attached'],
                 'food_id'              => $request->input('food_id_section3'),
                 'relation_id'          => $request->input('relation_id_section3'),
                 'amount_section3'      => $amountSection3,
-                'amount'               => $request->input('special_comment'),
+                'special_comment'      => $request->input('special_comment'),
             ];
 
             if ($this->hasAwardData($request)) {
@@ -448,8 +448,9 @@ class RegistrationController extends Controller
      */
     private function buildMembers(Request $request): array
     {
-        $members = [];
-        $names   = $request->input('member_name', []);
+        $members            = [];
+        $names              = $request->input('member_name', []);
+        $sectionDescription = $request->input('section_description'); // single field
 
         if (!is_array($names) || empty($names)) {
             return $members;
@@ -468,13 +469,14 @@ class RegistrationController extends Controller
 
             $members[] = [
                 'name'                => $name,
+                'surname'             => $request->input("member_surname.{$idx}"),
                 'mobile'              => $mobile,
                 'relation_id'         => $request->input("relation_id.{$idx}"),
                 'dob'                 => $request->input("dob.{$idx}"),
                 'age'                 => $age,
                 'food_id'             => $request->input("food_id.{$idx}"),
                 'amount'              => $amount,
-                'section_description' => $request->input("section_description.{$idx}"),
+                'section_description' => $sectionDescription,
             ];
         }
 

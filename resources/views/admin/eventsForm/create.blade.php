@@ -70,7 +70,7 @@
     }
 
     /* Add member button */
-    #add_member {
+    /* #add_member {
         width: 100%;
         border: 2px dashed #b8b4cc;
         background: transparent;
@@ -88,7 +88,7 @@
         background: #251c4b;
         border-color: #251c4b;
         color: #fff;
-    }
+    } */
 
     /* Grand Total box */
     .grand-total-box {
@@ -123,18 +123,6 @@
         border: 1px solid #dee2e6;
     }
 
-    /* Other award collapse */
-    #other_award_wrapper {
-        overflow: hidden;
-        max-height: 0;
-        opacity: 0;
-        transition: max-height .3s ease, opacity .25s;
-    }
-    #other_award_wrapper.show {
-        max-height: 80px;
-        opacity: 1;
-        margin-top: .75rem;
-    }
     /* form-label bold */
     .form-label {
         font-weight: 500;
@@ -258,33 +246,25 @@
                                 </div>
 								<div class="col-md-3">
                                     <div class="form-group m-0">
-                                        <label class="form-label" for="chain_name">Chain Name</label>
+                                        <label class="form-label" for="chain_name">GA-Chain Name<span class="text-danger">*</span></label>
                                              <input type="text" class="form-control" id="chain_name"
                                                  name="chain_name" value="{{ old('chain_name') }}"
                                                  placeholder="Chain name" required>
                                     </div>
                                 </div>
                             </div>
-
+                            <hr class="my-2">
                             <div class="row">
                                 
                                 <div class="col-md-3">
                                     <div class="form-group m-0">
-                                        <label class="form-label" for="company_name">Company Name</label>
+                                        <label class="form-label" for="company_name">Company Name<span class="text-danger">*</span></label>
                                         <input type="text" class="form-control" id="company_name"
                                                name="company_name" value="{{ old('company_name') }}"
-                                               placeholder="ABC Pvt. Ltd.">
+                                               placeholder="ABC Pvt. Ltd." required>
                                     </div>
                                 </div>
-                                <div class="col-md-3">
-                                    <div class="form-group m-0">
-                                        <label class="form-label" for="company_logo">Company Logo</label>
-                                        <input type="file" class="form-control-file" id="company_logo"
-                                               name="company_logo" accept="image/*">
-                                        <img id="company_logo_preview" class="img-thumb img-fluid" src="#" alt="Logo">
-                                    </div>
-                                </div>
-								<div class="col-md-4">
+                                <div class="col-md-4">
 								 <div class="form-group m-0">
                                 	<label class="form-label" for="about_company">About Company</label>
                                 	<textarea class="form-control" id="about_company"
@@ -292,9 +272,16 @@
                                           placeholder="Brief description of the company…">{{ old('about_company') }}</textarea>
                             	</div>
 								</div>
+                                <div class="col-md-3">
+                                    <div class="form-group m-0">
+                                        <label class="form-label" for="company_logo">Company Logo<span class="text-danger">*</span></label>
+                                        <input type="file" class="form-control-file" id="company_logo"
+                                               name="company_logo" accept="image/*" required>
+                                        <img id="company_logo_preview" class="img-thumb img-fluid" src="#" alt="Logo">
+                                    </div>
+                                </div>
+								
                             </div>
-
-                           
 
                         </div>
                     </div>
@@ -334,6 +321,13 @@
                                         </button>
                                     </div>
                                     <div class="row">
+                                        <div class="col-md-2">
+                                            <div class="form-group m-0">
+                                                <label class="form-label">Surname</label>
+                                                <input type="text" class="form-control" name="member_surname[{{ $i }}]"
+                                                       value="{{ old('member_surname.'.$i) }}" placeholder="Surname">
+                                            </div>
+                                        </div>
                                         <div class="col-md-2">
                                             <div class="form-group m-0">
                                                 <label class="form-label">Name</label>
@@ -438,7 +432,7 @@
                             <div class="row">
                                 <div class="col-md-2">
                                     <div class="form-group m-0">
-                                        <label class="form-label" for="member_first_name">Member's First Name</label>
+                                        <label class="form-label" for="member_first_name">Member's Surname</label>
                                         <input type="text" class="form-control" id="member_first_name"
                                                name="member_first_name" value="{{ old('member_first_name') }}"
                                                placeholder="First name">
@@ -446,7 +440,7 @@
                                 </div>
                                 <div class="col-md-2">
                                     <div class="form-group m-0">
-                                        <label class="form-label" for="member_last_name">Member's Last Name</label>
+                                        <label class="form-label" for="member_last_name">Member's Name</label>
                                         <input type="text" class="form-control" id="member_last_name"
                                                name="member_last_name" value="{{ old('member_last_name') }}"
                                                placeholder="Last name">
@@ -454,27 +448,35 @@
                                 </div>
                                 <div class="col-md-2">
                                     <div class="form-group m-0">
-                                        <label class="form-label" for="award_name">Award Certificate</label>
-                                        <select class="form-control" id="award_name" name="award_name">
-                                            <option value="">— Select Award —</option>
-                                            <option value="Salesmen of the year"
-                                                {{ old('award_name') == 'Salesmen of the year' ? 'selected' : '' }}>
-                                                Salesmen of the Year
-                                            </option>
-                                            <option value="Production Head"
-                                                {{ old('award_name') == 'Production Head' ? 'selected' : '' }}>
-                                                Production Head
-                                            </option>
-                                            <option value="Other"
-                                                {{ old('award_name') == 'Other' ? 'selected' : '' }}>
-                                                Other (specify)
-                                            </option>
+                                        <label class="form-label" for="relation_id_section3">Gender</label>
+                                         <select id="gender" name="gender" class="form-control">
+                                            <option value="">— Select Option —</option>
+                                            <option value="male" {{ old('gender') == 'male' ? 'selected' : '' }}>Male</option>
+                                            <option value="female" {{ old('gender') == 'female' ? 'selected' : '' }}>Female</option>
                                         </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-2">
+                                    <div class="form-group m-0">
+                                        <label class="form-label" for="relation_id_section3">Department</label>
+                                         <input type="text" class="form-control" id="department"
+                                               name="award_department" value="{{ old('award_department') }}"
+                                               placeholder="Award Department">
+                                    </div>
+                                    </div>
+                                
+                                <div class="col-md-2">
+                                    <div class="form-group m-0">
+                                        <label class="form-label" for="award_category">Award Category</label>
+                                       <input type="text" class="form-control" id="award_category"
+                                               name="award_category" value="{{ old('award_category') }}"
+                                               placeholder="Award Category">
                                     </div>
                                 </div>
 								<div class="col-md-2">
                                     <div class="form-group m-0">
-                                        <label class="form-label" for="award_type">Select</label>
+                                        <label class="form-label" for="award_type">Award Type</label>
                                         <select id="award_type" name="award_type" class="form-control">
                                             <option value="">— Select Option —</option>
                                             <option value="certificate" {{ old('award_type') == 'certificate' ? 'selected' : '' }}>Certificate</option>
@@ -499,22 +501,7 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="col-md-2">
-                                    <div class="form-group m-0">
-                                        <label class="form-label" for="relation_id_section3">Relation</label>
-                                        <select id="relation_id_section3" name="relation_id_section3" class="form-control">
-                                            <option value="">— Select Relation —</option>
-                                            @if(isset($relations))
-                                                @foreach($relations as $r)
-                                                    <option value="{{ $r->id }}"
-                                                        {{ old('relation_id_section3') == $r->id ? 'selected' : '' }}>
-                                                        {{ $r->name }}
-                                                    </option>
-                                                @endforeach
-                                            @endif
-                                        </select>
-                                    </div>
-                                </div>
+                                
                                 <div class="col-md-2 mt-2">
                                     <div class="form-group m-0">
                                         <label class="form-label" for="amount_section3">Amount (₹)</label>
@@ -523,14 +510,26 @@
                                                value="{{ old('amount_section3') }}" placeholder="0">
                                     </div>
                                 </div>
-								<div class="col-md-2 mt-2">
+                                <div class="col-md-2 mt-2">
                                     <div class="form-group m-0 mb-0">
-                                        <label class="form-label" for="photo_attached">Photo Attached</label>
+                                        <label class="form-label" for="photo_attached">Photo Attached
+                                            <i class="mdi mdi-information-outline ml-1 text-muted" data-toggle="tooltip" title="Attach member photo (optional). Max 2MB."></i>
+                                        </label>
                                         <input type="file" class="form-control-file" id="photo_attached"
                                                name="photo_attached" accept="image/*">
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Repeatable awards container -->
+                            <div id="awards_container" class="mb-3">
+                                <!-- Existing (primary) award fields stay as-is and submit as single set -->
+                            </div>
+
+                            <div class="text-right mb-3">
+                                <button type="button" id="add_award" class="btn btn-sm btn-outline-primary">+ Add Award</button>
+                            </div>
+
                             <hr class="my-3">
                             <div class="form-group m-0">
                                 <label class="form-label" for="special_comment">Special Comment for Member</label>
@@ -603,6 +602,45 @@
     </div>
 </div>
 
+{{-- ══ Hidden award template — outside form so it is never submitted ══ --}}
+<div id="award_template" style="display:none;" aria-hidden="true">
+    <div class="award-block mb-3" data-idx="__IDX__">
+        <div class="d-flex align-items-center mb-2">
+            <strong class="mr-2">Award #<span class="award-num">__NUM__</span></strong>
+            <button type="button" class="btn btn-sm btn-outline-danger ml-auto remove-award">-</button>
+        </div>
+        <div class="form-row">
+            <div class="form-group col-md-4">
+                <label class="form-label">Award Name</label>
+                <input name="award_name_extra[]" class="form-control">
+            </div>
+            <div class="form-group col-md-2">
+                <label class="form-label">Type</label>
+                <select name="award_type_extra[]" class="form-control award-type-extra">
+                    <option value="">Select</option>
+                    <option value="certificate">Certificate</option>
+                    <option value="award">Award</option>
+                </select>
+            </div>
+            <div class="form-group col-md-2">
+                <label class="form-label">Amount</label>
+                <input name="amount_section3_extra[]" class="form-control amount-section3-extra" readonly value="0">
+            </div>
+            <div class="form-group col-md-4">
+                <label class="form-label">Food</label>
+                <select name="food_id_section3_extra[]" class="form-control food-section3-extra">
+                    <option value="">— Select Food —</option>
+                    @if(isset($foods))
+                        @foreach($foods as $f)
+                            <option value="{{ $f->id }}" data-amount="{{ $f->amount ?? 0 }}">{{ $f->name }}</option>
+                        @endforeach
+                    @endif
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
 {{-- ══ Hidden member template — rendered by Blade, cloned by JS ══ --}}
 <div id="member_template" style="display:none;" aria-hidden="true">
     <div class="member-block" data-index="__IDX__">
@@ -613,6 +651,12 @@
             </button>
         </div>
         <div class="row">
+            <div class="col-md-2">
+                <div class="form-group m-0">
+                    <label class="form-label">Surname</label>
+                    <input type="text" class="form-control" name="member_surname[__IDX__]" placeholder="Surname">
+                </div>
+            </div>
             <div class="col-md-2">
                 <div class="form-group m-0">
                     <label class="form-label">Name</label>
@@ -728,6 +772,10 @@
         });
         var s3 = document.getElementById('amount_section3');
         if (s3) total += parseFloat(s3.value) || 0;
+        // Add all extra award amounts
+        document.querySelectorAll('.amount-section3-extra').forEach(function (el) {
+            total += parseFloat(el.value) || 0;
+        });
         document.getElementById('grand_total').value = total;
         var disp = document.getElementById('grand_total_display');
         if (disp) disp.textContent = total.toLocaleString('en-IN');
@@ -747,7 +795,8 @@
             if (lbl) lbl.innerHTML = '<i class="mdi mdi-account mr-1"></i> Member #' + (i + 1);
             block.setAttribute('data-index', i);
             block.querySelectorAll('[name]').forEach(function (el) {
-                el.name = el.name.replace(/\[\d+\]/, '[' + i + ']');
+                // Replace both numeric indexes [0], [1]... and template placeholder [__IDX__]
+                el.name = el.name.replace(/\[(__IDX__|\d+)\]/, '[' + i + ']');
             });
         });
         updateBadge();
@@ -763,15 +812,27 @@
         var foodSel = block.querySelector('.food-field');
         var foodAmount = null;
         if (foodSel && foodSel.selectedOptions && foodSel.selectedOptions[0]) {
-            foodAmount = parseFloat(foodSel.selectedOptions[0].dataset.amount) || null;
+            var parsedFood = parseFloat(foodSel.selectedOptions[0].dataset.amount);
+            if (!isNaN(parsedFood) && foodSel.selectedOptions[0].value !== '') {
+                foodAmount = parsedFood;
+            }
         }
         var age = (ageField && ageField.value !== '') ? parseInt(ageField.value, 10) : null;
-        if (foodAmount !== null && !isNaN(foodAmount)) {
+        if (foodAmount !== null) {
             amtField.value = foodAmount;
         } else {
             amtField.value = (age !== null) ? amountFromAge(age) : 0;
         }
     }
+
+    /* ── 8b. Input event delegation (for live age typing) ────────── */
+    document.addEventListener('input', function (e) {
+        var t = e.target;
+        if (t.classList.contains('age-field')) {
+            updateMemberAmount(t.closest('.member-block'));
+            recalcTotal();
+        }
+    });
 
     /* ── 8. Change event delegation ──────────────────────────────── */
     document.addEventListener('change', function (e) {
@@ -848,9 +909,12 @@
         // Deep clone the Blade-rendered template (has correct select options)
         var newBlock = template.cloneNode(true);
 
-        // Replace all __IDX__ placeholders in name attributes
+        // Replace all __IDX__ placeholders in name attributes AND id attributes
         newBlock.querySelectorAll('[name]').forEach(function (el) {
             el.name = el.name.replace(/__IDX__/g, newIndex);
+        });
+        newBlock.querySelectorAll('[id]').forEach(function (el) {
+            el.id = el.id.replace(/__IDX__/g, newIndex);
         });
 
         // Clear any values (template should be empty, but be safe)
@@ -873,21 +937,80 @@
         if (firstInput) setTimeout(function () { firstInput.focus(); }, 300);
     });
 
-    /* ── 11. Award "Other" toggle ─────────────────────────────────── */
-    var awardNameSel = document.getElementById('award_name');
-    var otherWrap    = document.getElementById('other_award_wrapper');
-    var otherInp     = document.getElementById('other_award_name');
-    function toggleOtherAward() {
-        if (!awardNameSel || !otherWrap) return;
-        if (awardNameSel.value === 'Other') {
-            otherWrap.classList.add('show');
-            if (otherInp) otherInp.required = true;
-        } else {
-            otherWrap.classList.remove('show');
-            if (otherInp) { otherInp.required = false; otherInp.value = ''; }
-        }
+    /* ── 11. Repeatable awards (frontend only) ───────────────────── */
+    function updateAwardNumbers() {
+        document.querySelectorAll('#awards_container .award-block').forEach(function (blk, i) {
+            var num = blk.querySelector('.award-num'); if (num) num.textContent = (i + 2); // primary is #1
+            blk.setAttribute('data-idx', i);
+        });
     }
-    if (awardNameSel) { awardNameSel.addEventListener('change', toggleOtherAward); toggleOtherAward(); }
+
+    var addAwardBtn = document.getElementById('add_award');
+    if (addAwardBtn) {
+        addAwardBtn.addEventListener('click', function () {
+            var container = document.getElementById('awards_container');
+            var template  = document.getElementById('award_template');
+            if (!container || !template) return;
+            var newIdx = container.querySelectorAll('.award-block').length;
+
+            // Clone template block
+            var proto = template.querySelector('.award-block');
+            if (!proto) return;
+            var clone = proto.cloneNode(true);
+
+            // Replace __IDX__ placeholder in name/id attributes
+            clone.querySelectorAll('[name]').forEach(function (el) {
+                el.name = el.name.replace(/__IDX__/g, newIdx);
+            });
+            clone.querySelectorAll('[id]').forEach(function (el) {
+                el.id = el.id.replace(/__IDX__/g, newIdx);
+            });
+
+            // Replace __NUM__ text in inner HTML
+            clone.innerHTML = clone.innerHTML.replace(/__NUM__/g, newIdx + 2);
+
+            // Clear input values and reset selects
+            clone.querySelectorAll('input').forEach(function (inp) { inp.value = ''; });
+            clone.querySelectorAll('select').forEach(function (s) { s.selectedIndex = 0; });
+
+            // Set dataset index and visible number
+            clone.setAttribute('data-idx', newIdx);
+            var num = clone.querySelector('.award-num');
+            if (num) num.textContent = (newIdx + 2);
+
+            container.appendChild(clone);
+            updateAwardNumbers();
+            clone.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+    }
+
+    // Delegated click for removing extra award blocks
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest('.remove-award');
+        if (!btn) return;
+        var blk = btn.closest('.award-block'); if (!blk) return;
+        blk.remove();
+        updateAwardNumbers();
+        recalcTotal();
+    });
+
+    // Delegated change handling for extra award type / food to calculate amount
+    document.addEventListener('change', function (e) {
+        var t = e.target;
+        if (t.classList.contains('award-type-extra')) {
+            var blk = t.closest('.award-block');
+            var amt = blk.querySelector('.amount-section3-extra');
+            if (amt) amt.value = AWARD_AMOUNTS[t.value] || '';
+            recalcTotal();
+        }
+        if (t.classList.contains('food-section3-extra')) {
+            var blk = t.closest('.award-block');
+            var opt = t.selectedOptions[0];
+            var amt = blk.querySelector('.amount-section3-extra');
+            if (amt) amt.value = opt ? (parseFloat(opt.dataset.amount) || '') : '';
+            recalcTotal();
+        }
+    });
 
     /* ── 12. Init ─────────────────────────────────────────────────── */
     (function () {
@@ -898,6 +1021,11 @@
 
     recalcTotal();
     updateBadge();
+
+    // Initialize Bootstrap tooltips if available
+    if (window.jQuery && typeof jQuery.fn.tooltip === 'function') {
+        jQuery(function(){ jQuery('[data-toggle="tooltip"]').tooltip(); });
+    }
 
 })();
 </script>

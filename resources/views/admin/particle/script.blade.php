@@ -339,13 +339,14 @@ $(document).ready( function () {
                  return $.extend({}, d);
              }
           },
-          "columns": [
-             { "data": "id" },
-             { "data": "name" },
-             { "data": "image", "render": function(data){ return data ? '<img src="'+data+'" style="height:40px;"/>' : ''; } },
-             { "data": "description" },
-             { "data": "action" },
-          ],
+             "columns": [
+                 { "data": "id" },
+                 { "data": "name" },
+                 { "data": "image", "render": function(data){ return data ? '<img src="'+data+'" style="height:40px;"/>' : ''; } },
+                 { "data": "qr_code", "render": function(data){ return data ? '<a href="'+data+'" target="_blank" title="Open QR"><img src="'+data+'" style="height:40px; width:40px; object-fit:cover;"/></a>' : ''; } },
+                 { "data": "description" },
+                 { "data": "action" },
+             ],
           aoColumnDefs: [
              {
                 bSortable: false,

@@ -7,8 +7,8 @@
   <meta content="Innoveza CRM" name="description" />
   <meta content="MyraStudio" name="author" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <!-- App favicon -->
-  <link rel="shortcut icon" href="{{ asset('newAdmin/images/solar-final.png') }}">
+  <!-- App favicon (fallback to pa.png when missing) -->
+  <link rel="shortcut icon" href="{{ file_exists(public_path('newAdmin/images/solar-final.png')) ? asset('newAdmin/images/solar-final.png') : asset('newAdmin/images/pa.png') }}">
 
   {{-- css --}}
   @include('admin.particle.css')

@@ -9,8 +9,8 @@
     <meta content="MyraStudio" name="author" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 
-    <!-- App favicon -->
-    <link rel="shortcut icon" href="{{ asset('newAdmin/images/innoveza-n.png') }}">
+    <!-- App favicon (fallback) -->
+    <link rel="shortcut icon" href="{{ file_exists(public_path('newAdmin/images/innoveza-n.png')) ? asset('newAdmin/images/innoveza-n.png') : asset('newAdmin/images/pa.png') }}">
 
     <!-- App css -->
     {{-- <link href="{{ asset('newAdmin/css/bootstrap.min.css') }}" rel="stylesheet" type="text/css" /> --}}
@@ -31,12 +31,12 @@
                     <div class="d-flex align-items-center min-vh-100">
                         <div class="w-100 d-block bg-white shadow-lg rounded my-5">
                             <div class="row">
-                                <div class="col-lg-5 d-none d-lg-block bg-login rounded-left" style="background: url('{{ asset('newAdmin/images/innoveza-n.png') }}') no-repeat center center; background-size: contain;" ></div>
+                                <div class="col-lg-5 d-none d-lg-block bg-login rounded-left" style="background: url('{{ file_exists(public_path('newAdmin/images/innoveza-n.png')) ? asset('newAdmin/images/innoveza-n.png') : asset('newAdmin/images/pa.png') }}') no-repeat center center; background-size: contain;" ></div>
                                 <div class="col-lg-7">
                                     <div class="p-5">
                                         <div class="text-center">
                                             <a href="{{ route('login') }}" class="d-block mb-5">
-                                                <img src="{{ asset('newAdmin/images/innoveza-name.png') }}" alt="app-logo" height="18" />
+                                                <img src="{{ file_exists(public_path('newAdmin/images/innoveza-name.png')) ? asset('newAdmin/images/innoveza-name.png') : asset('newAdmin/images/pa.png') }}" alt="app-logo" height="18" />
                                             </a>
                                         </div>
                                         <h1 class="h5 mb-1">Welcome Back!</h1>

@@ -8,6 +8,7 @@
     <meta content="PA" name="description" />
     <meta content="MyraStudio" name="author" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <!-- App favicon -->
     <link rel="shortcut icon" href="{{ asset('newAdmin/images/pa.png') }}">
@@ -61,22 +62,32 @@
                                             </a>
                                         </div>
                                         <h1 class="h5 mb-1">Welcome Back!</h1>
-                                        <form method="POST" action="{{ route('login') }}">
+                                        <form id="loginForm" method="POST" action="#">
                                             @csrf
-                                            <div class="form-group">
+                                            <input type="hidden" id="finalAction" name="_finalAction" value="">
+                                            <div id="step-email" class="form-group">
                                                 <input type="email" name="email" value="{{ old('email') }}" required autofocus autocomplete="username" class="form-control form-control-user" id="email" placeholder="Email Address">
                                                 @if ($errors->has('email'))
                                                     <span class="text-danger">{{ $errors->first('email') }}</span>
                                                 @endif
                                             </div>
-                                            <div class="form-group">
-                                                <input type="password" name="password" class="form-control form-control-user" id="password" placeholder="Password" required autocomplete="current-password">
+
+                                            <div id="step-password" class="form-group" style="display:none;">
+                                                <input type="password" name="password" class="form-control form-control-user" id="password" placeholder="Password" autocomplete="current-password">
                                                 @if ($errors->has('password'))
                                                     <span class="text-danger">{{ $errors->first('password') }}</span>
                                                 @endif
                                             </div>
-                                            <button type="submit" class="btn btn-save">Log In</button>
 
+                                            <div id="step-mobile" class="form-group" style="display:none;">
+                                                <input type="text" name="mobile" class="form-control form-control-user" id="mobile" placeholder="Mobile Number">
+                                                @if ($errors->has('mobile'))
+                                                    <span class="text-danger">{{ $errors->first('mobile') }}</span>
+                                                @endif
+                                            </div>
+
+                                            <button type="submit" id="primaryBtn" class="btn btn-save">Next</button>
+                                            <a href="{{ route('login') }}" id="cancelBtn" class="btn btn-link" style="display:none;">Cancel</a>
                                         </form>
 
                                         <div class="row mt-4">
@@ -114,10 +125,98 @@
 
  {{--  --}}
 
-</body>
-
-</html>
 <script>
+    (function(){
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        const form = document.getElementById('loginForm');
+        const emailInput = document.getElementById('email');
+        const passwordGroup = document.getElementById('step-password');
+        const mobileGroup = document.getElementById('step-mobile');
+        const primaryBtn = document.getElementById('primaryBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+        let currentStage = 'email';
+        let resolvedRole = null;
+
+        function showStage(stage){
+            currentStage = stage;
+            if(stage === 'email'){
+                document.getElementById('step-email').style.display = '';
+                passwordGroup.style.display = 'none';
+                mobileGroup.style.display = 'none';
+                primaryBtn.textContent = 'Next';
+                cancelBtn.style.display = 'none';
+            } else if(stage === 'password'){
+                document.getElementById('step-email').style.display = '';
+                passwordGroup.style.display = '';
+                mobileGroup.style.display = 'none';
+                primaryBtn.textContent = 'Log In';
+                cancelBtn.style.display = '';
+            } else if(stage === 'mobile'){
+                document.getElementById('step-email').style.display = '';
+                passwordGroup.style.display = 'none';
+                mobileGroup.style.display = '';
+                primaryBtn.textContent = 'Log In';
+                cancelBtn.style.display = '';
+            }
+        }
+
+        async function checkRole(email){
+            const resp = await fetch('{{ url('/check-role') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ email })
+            });
+            if(!resp.ok) throw new Error('Network error');
+            return resp.json();
+        }
+
+        form.addEventListener('submit', async function(e){
+            e.preventDefault();
+            if(currentStage === 'email'){
+                const email = emailInput.value.trim();
+                if(!email) return;
+                primaryBtn.disabled = true;
+                primaryBtn.textContent = 'Checking...';
+                try{
+                    const data = await checkRole(email);
+                    resolvedRole = data.role || 'user';
+                    if(resolvedRole === 'admin'){
+                        showStage('password');
+                    } else {
+                        showStage('mobile');
+                    }
+                }catch(err){
+                    alert('Unable to check role. Please try again.');
+                }finally{
+                    primaryBtn.disabled = false;
+                }
+            } else if(currentStage === 'password'){
+                // submit to normal login route with password
+                form.action = '{{ route('login') }}';
+                // remove our placeholder hidden field
+                document.getElementById('finalAction').name = '';
+                form.submit();
+            } else if(currentStage === 'mobile'){
+                // submit to user-login route
+                form.action = '{{ url('/user-login') }}';
+                document.getElementById('finalAction').name = '';
+                form.submit();
+            }
+        });
+
+        cancelBtn.addEventListener('click', function(e){
+            e.preventDefault();
+            showStage('email');
+        });
+
+        // initialize
+        showStage('email');
+    })();
+
     setTimeout(function() {
         let alertEl = document.querySelector('.alert');
         if (alertEl) {
@@ -127,3 +226,7 @@
         }
     }, 4000); // auto close after 4 seconds
 </script>
+
+</body>
+
+</html>

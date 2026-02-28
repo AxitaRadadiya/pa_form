@@ -8,8 +8,8 @@
   <meta content="MyraStudio" name="author" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 
-  <!-- App favicon -->
-  <link rel="shortcut icon" href="{{ asset('newAdmin/images/favicon.ico') }}">
+  <!-- App favicon (fallback to pa.png when missing) -->
+  <link rel="shortcut icon" href="{{ file_exists(public_path('newAdmin/images/favicon.ico')) ? asset('newAdmin/images/favicon.ico') : asset('newAdmin/images/pa.png') }}">
 
   {{-- css --}}
   @include('tenant.particle.css')
