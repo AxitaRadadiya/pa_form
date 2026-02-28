@@ -9,6 +9,7 @@ class Member extends Model
 {
     protected $fillable = [
         'registration_id',
+        'surname',          // ← ADDED (blade sends member_surname[])
         'name',
         'mobile',
         'dob',
@@ -17,6 +18,11 @@ class Member extends Model
         'relation_id',
         'food_id',
         'section_description',
+    ];
+
+    protected $casts = [
+        'amount' => 'decimal:2',
+        'age'    => 'integer',
     ];
 
     // ---------- Relationships ----------

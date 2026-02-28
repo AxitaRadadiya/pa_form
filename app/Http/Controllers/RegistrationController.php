@@ -57,7 +57,7 @@ class RegistrationController extends Controller
     // ---------------------------------------------------------------
     public function show($id)
     {
-        $reg = Registration::with(['members.relation', 'members.food', 'award.food', 'award.relation'])
+        $reg = Registration::with(['members.relation', 'members.food', 'awards'])
             ->findOrFail($id);
 
         if (!$this->isAdmin() && $reg->user_id !== auth()->id()) {
@@ -76,12 +76,19 @@ class RegistrationController extends Controller
         $relations = Relation::orderBy('name')->get();
         $foods     = Food::orderBy('name')->get();
 
-        $event = null;
+        $event        = null;
+        $qr_image_url = null;
+
         if ($request->has('event')) {
             $event = Event::find($request->get('event'));
+
+            // Fetch QR code from the Event model and build full public URL
+            if ($event && $event->qr_code) {
+                $qr_image_url = asset('storage/' . $event->qr_code);
+            }
         }
 
-        return view('admin.eventsForm.create', compact('chapters', 'relations', 'foods', 'event'));
+        return view('admin.eventsForm.create', compact('chapters', 'relations', 'foods', 'event', 'qr_image_url'));
     }
 
     // ---------------------------------------------------------------
@@ -90,15 +97,22 @@ class RegistrationController extends Controller
     public function store(Request $request)
     {
         $request->validate([
+            // Section 1 — Personal / Company
+            'first_name'             => 'nullable|string|max:255',
+            'last_name'              => 'nullable|string|max:255',
+            'mobile'                 => 'nullable|string|max:30',
+            'email'                  => 'nullable|email|max:255',
             'chapter_id'             => 'required|integer|exists:chapters,id',
             'chain_name'             => 'required|string|max:255',
             'company_name'           => 'nullable|string|max:255',
             'about_company'          => 'nullable|string',
+            'company_logo'           => 'nullable|image|max:2048',
             'event_id'               => 'nullable|integer|exists:events,id',
-            'transaction_id'         => 'nullable|string|max:255',
-            'grand_total'            => 'nullable|numeric',
 
-            // Members (Section 2) - array fields
+            // Section 2 — Members (arrays)
+            'section_description'    => 'nullable|string',
+            'member_surname'         => 'nullable|array',
+            'member_surname.*'       => 'nullable|string|max:255',
             'member_name'            => 'nullable|array',
             'member_name.*'          => 'nullable|string|max:255',
             'member_mobile'          => 'nullable|array',
@@ -108,78 +122,82 @@ class RegistrationController extends Controller
             'dob'                    => 'nullable|array',
             'dob.*'                  => 'nullable|date',
             'age'                    => 'nullable|array',
-            'age.*'                  => 'nullable|integer',
+            'age.*'                  => 'nullable|integer|min:0|max:120',
             'food_id'                => 'nullable|array',
             'food_id.*'              => 'nullable|integer|exists:foods,id',
             'amount'                 => 'nullable|array',
             'amount.*'               => 'nullable|numeric',
-            'section_description'    => 'nullable|string',
 
-            // Award (Section 3)
-            'section3_description'   => 'nullable|string',
-            'member_first_name'      => 'nullable|string|max:255',
-            'member_last_name'       => 'nullable|string|max:255',
-            'award_name'             => 'nullable|string|max:255',
-            'gender'                 => 'nullable|string|max:255',
-            'award_type'             => 'nullable|string|in:certificate,award',
-            'photo_attached'         => 'nullable|image|max:2048',
-            'food_id_section3'       => 'nullable|integer|exists:foods,id',
-            'relation_id_section3'   => 'nullable|integer|exists:relations,id',
-            'amount_section3'        => 'nullable|numeric',
-            'special_comment'        => 'nullable|string',
+            // Section 3 — Awards (arrays) — matches blade: award_member_surname[], award_member_name[], etc.
+            'section3_description'        => 'nullable|string',
+            'award_member_surname'        => 'nullable|array',
+            'award_member_surname.*'      => 'nullable|string|max:255',
+            'award_member_name'           => 'nullable|array',
+            'award_member_name.*'         => 'nullable|string|max:255',
+            'award_gender'                => 'nullable|array',
+            'award_gender.*'              => 'nullable|string|in:male,female',
+            'award_department'            => 'nullable|array',
+            'award_department.*'          => 'nullable|string|max:255',
+            'award_category'              => 'nullable|array',
+            'award_category.*'            => 'nullable|string|max:255',
+            'award_type'                  => 'nullable|array',
+            'award_type.*'                => 'nullable|string|in:certificate,award',
+            'award_food_id'               => 'nullable|array',
+            'award_food_id.*'             => 'nullable|integer|exists:foods,id',
+            'award_amount'                => 'nullable|array',
+            'award_amount.*'              => 'nullable|numeric',
+            'award_photo'                 => 'nullable|array',
+            'award_photo.*'               => 'nullable|image|max:2048',
+            'award_special_comment'       => 'nullable|array',
+            'award_special_comment.*'     => 'nullable|string',
 
-            // Files
-            'company_logo'           => 'nullable|image|max:2048',
-            'qr_code'                => 'nullable|image|max:2048',
+            // Payment
+            'transaction_id'         => 'nullable|string|max:255',
+            'grand_total'            => 'nullable|numeric',
             'screenshot_payment'     => 'nullable|image|max:4096',
-        ]);
-       
-        // --- Upload files ---
-        $files = $this->uploadFiles($request, [
-            'company_logo', 'qr_code', 'screenshot_payment', 'photo_attached'
+            'qr_code'                => 'nullable|image|max:2048',
         ]);
 
-        // --- Build members list ---
+        // --- Upload single files ---
+        $files = $this->uploadFiles($request, [
+            'company_logo', 'qr_code', 'screenshot_payment',
+        ]);
+
+        // --- Build members array (Section 2) ---
         $members = $this->buildMembers($request);
 
-        // --- Recalculate award amount server-side ---
-        $amountSection3 = $this->calcAwardAmount($request);
+        // --- Build awards array (Section 3) ---
+        $awards = $this->buildAwards($request);
 
-        // --- Recalculate grand total server-side ---
-        $grandTotal = array_sum(array_column($members, 'amount')) + $amountSection3;
+        // --- Grand total (server-side recalc) ---
+        $memberTotal = array_sum(array_column($members, 'amount'));
+        $awardTotal  = array_sum(array_column($awards,  'amount'));
+        $grandTotal  = $memberTotal + $awardTotal;
 
-        // Helpful debug: log key inputs (exclude file uploads) and computed values
-        try {
-            Log::debug('Registration store input', [
-                'user_id' => auth()->id(),
-                'request' => $request->except(['company_logo','qr_code','screenshot_payment','photo_attached']),
-            ]);
-            Log::debug('Computed members and totals for registration store', [
-                'members_count' => count($members),
-                'members' => $members,
-                'amount_section3' => $amountSection3,
-                'grand_total' => $grandTotal,
-            ]);
-        } catch (\Exception $e) {
-            // swallow logging errors but record them
-            Log::warning('Failed to write debug log for registration store: '.$e->getMessage());
-        }
+        Log::debug('Registration store input', [
+            'user_id'        => auth()->id(),
+            'members_count'  => count($members),
+            'awards_count'   => count($awards),
+            'grand_total'    => $grandTotal,
+            'members'        => $members,
+            'awards'         => $awards,
+        ]);
 
         DB::beginTransaction();
         try {
             // 1. Create Registration (Section 1)
             $reg = Registration::create([
-                'user_id'             => auth()->id(),
-                'event_id'            => $request->input('event_id'),
-                'chapter_id'          => $request->input('chapter_id'),
-                'chain_name'          => $request->input('chain_name'),
-                'company_name'        => $request->input('company_name'),
-                'about_company'       => $request->input('about_company'),
-                'company_logo'        => $files['company_logo'] ?? null,
-                'qr_code'             => $files['qr_code'] ?? null,
-                'screenshot_payment'  => $files['screenshot_payment'] ?? null,
-                'grand_total'         => $grandTotal,
-                'transaction_id'      => $request->input('transaction_id'),
+                'user_id'            => auth()->id(),
+                'event_id'           => $request->input('event_id') ?: null,
+                'chapter_id'         => $request->input('chapter_id'),
+                'chain_name'         => $request->input('chain_name'),
+                'company_name'       => $request->input('company_name'),
+                'about_company'      => $request->input('about_company'),
+                'company_logo'       => $files['company_logo'] ?? null,
+                'qr_code'            => $files['qr_code'] ?? null,
+                'screenshot_payment' => $files['screenshot_payment'] ?? null,
+                'grand_total'        => $grandTotal,
+                'transaction_id'     => $request->input('transaction_id'),
             ]);
 
             // 2. Create Members (Section 2)
@@ -187,34 +205,33 @@ class RegistrationController extends Controller
                 Member::create(array_merge($memberData, ['registration_id' => $reg->id]));
             }
 
-            // 3. Create Award (Section 3) — only if any award field is filled
-            if ($this->hasAwardData($request)) {
-                Award::create([
-                    'registration_id'      => $reg->id,
-                    'section3_description' => $request->input('section3_description'),
-                    'first_name'           => $request->input('member_first_name'),
-                    'last_name'            => $request->input('member_last_name'),
-                    'award_name'           => $request->input('award_name'),
-                    'gender'               => $request->input('gender'),
-                    'award_type'           => $request->input('award_type'),
-                    'photo_attached'       => $files['photo_attached'] ?? null,
-                    'food_id'              => $request->input('food_id_section3'),
-                    'relation_id'          => $request->input('relation_id_section3'),
-                    'amount_section3'      => $amountSection3,
-                    'special_comment'      => $request->input('special_comment'),
-                ]);
+            // 3. Create Awards (Section 3)
+            foreach ($awards as $idx => $awardData) {
+                // Handle per-award photo upload
+                $photoPath = null;
+                if ($request->hasFile("award_photo.{$idx}")) {
+                    $photoPath = $request->file("award_photo.{$idx}")->store('registrations/awards', 'public');
+                }
+                Award::create(array_merge($awardData, [
+                    'registration_id' => $reg->id,
+                    'photo_attached'  => $photoPath,
+                ]));
             }
-            
+
             DB::commit();
             Log::info('Registration stored', ['id' => $reg->id, 'user' => auth()->id()]);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Failed to store registration', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
-            $msg = config('app.debug') ? 'Failed to save registration: ' . $e->getMessage() : 'Failed to save registration.';
+            Log::error('Failed to store registration', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            $msg = config('app.debug')
+                ? 'Failed to save registration: ' . $e->getMessage()
+                : 'Failed to save registration.';
             return back()->withInput()->with('error', $msg);
         }
-        
 
         return $this->isAdmin()
             ? redirect()->route('dashboard')->withSuccess('Registration submitted successfully.')
@@ -226,7 +243,7 @@ class RegistrationController extends Controller
     // ---------------------------------------------------------------
     public function edit($id)
     {
-        $reg = Registration::with(['members', 'award'])->findOrFail($id);
+        $reg = Registration::with(['members', 'awards'])->findOrFail($id);
 
         if (!$this->isAdmin() && $reg->user_id !== auth()->id()) {
             abort(403);
@@ -244,20 +261,27 @@ class RegistrationController extends Controller
     // ---------------------------------------------------------------
     public function update(Request $request, $id)
     {
-        $reg = Registration::with(['members', 'award'])->findOrFail($id);
+        $reg = Registration::with(['members', 'awards'])->findOrFail($id);
 
         if (!$this->isAdmin() && $reg->user_id !== auth()->id()) {
             abort(403);
         }
 
         $request->validate([
+            'first_name'             => 'nullable|string|max:255',
+            'last_name'              => 'nullable|string|max:255',
+            'mobile'                 => 'nullable|string|max:30',
+            'email'                  => 'nullable|email|max:255',
             'chapter_id'             => 'required|integer|exists:chapters,id',
             'chain_name'             => 'required|string|max:255',
             'company_name'           => 'nullable|string|max:255',
             'about_company'          => 'nullable|string',
+            'company_logo'           => 'nullable|image|max:2048',
             'event_id'               => 'nullable|integer|exists:events,id',
-            'transaction_id'         => 'nullable|string|max:255',
 
+            'section_description'    => 'nullable|string',
+            'member_surname'         => 'nullable|array',
+            'member_surname.*'       => 'nullable|string|max:255',
             'member_name'            => 'nullable|array',
             'member_name.*'          => 'nullable|string|max:255',
             'member_mobile'          => 'nullable|array',
@@ -267,71 +291,73 @@ class RegistrationController extends Controller
             'dob'                    => 'nullable|array',
             'dob.*'                  => 'nullable|date',
             'age'                    => 'nullable|array',
-            'age.*'                  => 'nullable|integer',
+            'age.*'                  => 'nullable|integer|min:0|max:120',
             'food_id'                => 'nullable|array',
             'food_id.*'              => 'nullable|integer|exists:foods,id',
             'amount'                 => 'nullable|array',
             'amount.*'               => 'nullable|numeric',
-            'section_description'    => 'nullable|string',
 
-            'section3_description'   => 'nullable|string',
-            'member_first_name'      => 'nullable|string|max:255',
-            'member_last_name'       => 'nullable|string|max:255',
-            'award_name'             => 'nullable|string|max:255',
-            'gender'                 => 'nullable|string|max:255',
-            'award_type'             => 'nullable|string|in:certificate,award',
-            'photo_attached'         => 'nullable|image|max:2048',
-            'food_id_section3'       => 'nullable|integer|exists:foods,id',
-            'relation_id_section3'   => 'nullable|integer|exists:relations,id',
-            'amount_section3'        => 'nullable|numeric',
-            'special_comment'        => 'nullable|string',
+            'section3_description'        => 'nullable|string',
+            'award_member_surname'        => 'nullable|array',
+            'award_member_surname.*'      => 'nullable|string|max:255',
+            'award_member_name'           => 'nullable|array',
+            'award_member_name.*'         => 'nullable|string|max:255',
+            'award_gender'                => 'nullable|array',
+            'award_gender.*'              => 'nullable|string|in:male,female',
+            'award_department'            => 'nullable|array',
+            'award_department.*'          => 'nullable|string|max:255',
+            'award_category'              => 'nullable|array',
+            'award_category.*'            => 'nullable|string|max:255',
+            'award_type'                  => 'nullable|array',
+            'award_type.*'                => 'nullable|string|in:certificate,award',
+            'award_food_id'               => 'nullable|array',
+            'award_food_id.*'             => 'nullable|integer|exists:foods,id',
+            'award_amount'                => 'nullable|array',
+            'award_amount.*'              => 'nullable|numeric',
+            'award_photo'                 => 'nullable|array',
+            'award_photo.*'               => 'nullable|image|max:2048',
+            'award_special_comment'       => 'nullable|array',
+            'award_special_comment.*'     => 'nullable|string',
 
-            'company_logo'           => 'nullable|image|max:2048',
-            'qr_code'                => 'nullable|image|max:2048',
+            'transaction_id'         => 'nullable|string|max:255',
+            'grand_total'            => 'nullable|numeric',
             'screenshot_payment'     => 'nullable|image|max:4096',
+            'qr_code'                => 'nullable|image|max:2048',
         ]);
 
         // --- Upload files (delete old ones if replaced) ---
         $files = $this->uploadFiles($request, [
-            'company_logo', 'qr_code', 'screenshot_payment', 'photo_attached'
+            'company_logo', 'qr_code', 'screenshot_payment',
         ], $reg);
 
-        // --- Build members ---
-        $members        = $this->buildMembers($request);
-        $amountSection3 = $this->calcAwardAmount($request);
-        $grandTotal     = array_sum(array_column($members, 'amount')) + $amountSection3;
+        // --- Build members & awards ---
+        $members     = $this->buildMembers($request);
+        $awards      = $this->buildAwards($request);
+        $grandTotal  = array_sum(array_column($members, 'amount'))
+                     + array_sum(array_column($awards,  'amount'));
 
-        // Helpful debug: log key inputs (exclude files) and computed values for update
-        try {
-            Log::debug('Registration update input', [
-                'user_id' => auth()->id(),
-                'registration_id' => $reg->id,
-                'request' => $request->except(['company_logo','qr_code','screenshot_payment','photo_attached']),
-            ]);
-            Log::debug('Computed members and totals for registration update', [
-                'members_count' => count($members),
-                'members' => $members,
-                'amount_section3' => $amountSection3,
-                'grand_total' => $grandTotal,
-            ]);
-        } catch (\Exception $e) {
-            Log::warning('Failed to write debug log for registration update: '.$e->getMessage());
-        }
+        Log::debug('Registration update input', [
+            'user_id'         => auth()->id(),
+            'registration_id' => $reg->id,
+            'members_count'   => count($members),
+            'awards_count'    => count($awards),
+            'grand_total'     => $grandTotal,
+        ]);
 
         DB::beginTransaction();
         try {
             // 1. Update Registration
             $reg->update([
-                'event_id'            => $request->input('event_id'),
-                'chapter_id'          => $request->input('chapter_id'),
-                'chain_name'          => $request->input('chain_name'),
-                'company_name'        => $request->input('company_name'),
-                'about_company'       => $request->input('about_company'),
-                'company_logo'        => $files['company_logo'],
-                'qr_code'             => $files['qr_code'],
-                'screenshot_payment'  => $files['screenshot_payment'],
-                'grand_total'         => $grandTotal,
-                'transaction_id'      => $request->input('transaction_id'),
+                'event_id'           => $request->input('event_id') ?: null,
+                'chapter_id'         => $request->input('chapter_id'),
+                'chain_name'         => $request->input('chain_name'),
+                'company_name'       => $request->input('company_name'),
+                'about_company'      => $request->input('about_company'),
+                'company_logo'       => $files['company_logo'],
+                'qr_code'            => $files['qr_code'],
+                'screenshot_payment' => $files['screenshot_payment'],
+                'grand_total'        => $grandTotal,
+                'transaction_id'     => $request->input('transaction_id'),
             ]);
 
             // 2. Sync Members — delete all old, re-insert fresh
@@ -340,29 +366,23 @@ class RegistrationController extends Controller
                 Member::create(array_merge($memberData, ['registration_id' => $reg->id]));
             }
 
-            // 3. Sync Award
-            $awardData = [
-                'section3_description' => $request->input('section3_description'),
-                'first_name'           => $request->input('member_first_name'),
-                'last_name'            => $request->input('member_last_name'),
-                'gender'               => $request->input('gender'),
-                'award_name'           => $request->input('award_name'),
-                'award_type'           => $request->input('award_type'),
-                'photo_attached'       => $files['photo_attached'],
-                'food_id'              => $request->input('food_id_section3'),
-                'relation_id'          => $request->input('relation_id_section3'),
-                'amount_section3'      => $amountSection3,
-                'special_comment'      => $request->input('special_comment'),
-            ];
+            // 3. Sync Awards — delete old award photos + records, re-insert fresh
+            foreach ($reg->awards as $oldAward) {
+                if ($oldAward->photo_attached) {
+                    Storage::disk('public')->delete($oldAward->photo_attached);
+                }
+            }
+            $reg->awards()->delete();
 
-            if ($this->hasAwardData($request)) {
-                Award::updateOrCreate(
-                    ['registration_id' => $reg->id],
-                    $awardData
-                );
-            } else {
-                // Remove award if all section 3 fields are empty
-                $reg->award()->delete();
+            foreach ($awards as $idx => $awardData) {
+                $photoPath = null;
+                if ($request->hasFile("award_photo.{$idx}")) {
+                    $photoPath = $request->file("award_photo.{$idx}")->store('registrations/awards', 'public');
+                }
+                Award::create(array_merge($awardData, [
+                    'registration_id' => $reg->id,
+                    'photo_attached'  => $photoPath,
+                ]));
             }
 
             DB::commit();
@@ -370,8 +390,13 @@ class RegistrationController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Failed to update registration', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
-            $msg = config('app.debug') ? 'Failed to update registration: ' . $e->getMessage() : 'Failed to update registration.';
+            Log::error('Failed to update registration', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            $msg = config('app.debug')
+                ? 'Failed to update registration: ' . $e->getMessage()
+                : 'Failed to update registration.';
             return back()->withInput()->with('error', $msg);
         }
 
@@ -385,23 +410,27 @@ class RegistrationController extends Controller
     // ---------------------------------------------------------------
     public function destroy($id)
     {
-        $reg = Registration::findOrFail($id);
+        $reg = Registration::with('awards')->findOrFail($id);
 
         if (!$this->isAdmin() && $reg->user_id !== auth()->id()) {
             abort(403);
         }
 
-        // Delete files from storage
+        // Delete single files from storage
         foreach (['company_logo', 'qr_code', 'screenshot_payment'] as $f) {
             if ($reg->{$f}) {
                 Storage::disk('public')->delete($reg->{$f});
             }
         }
-        if ($reg->award?->photo_attached) {
-            Storage::disk('public')->delete($reg->award->photo_attached);
+
+        // Delete per-award photos
+        foreach ($reg->awards as $award) {
+            if ($award->photo_attached) {
+                Storage::disk('public')->delete($award->photo_attached);
+            }
         }
 
-        $reg->delete(); // cascades members + award via DB foreign keys
+        $reg->delete(); // cascades members + awards via DB foreign keys
 
         return redirect()->route('registrations.index')->withSuccess('Registration deleted.');
     }
@@ -411,7 +440,7 @@ class RegistrationController extends Controller
     // ---------------------------------------------------------------
 
     /**
-     * Upload files and return their storage paths.
+     * Upload single-file fields and return their storage paths.
      * If $reg is passed, old files are deleted when replaced.
      */
     private function uploadFiles(Request $request, array $fields, ?Registration $reg = null): array
@@ -419,62 +448,61 @@ class RegistrationController extends Controller
         $result = [];
         foreach ($fields as $f) {
             if ($request->hasFile($f)) {
-                // Delete old file if updating
-                $oldPath = $reg?->{$f} ?? ($reg?->award?->photo_attached ?? null);
-                if ($f === 'photo_attached') {
-                    $oldPath = $reg?->award?->photo_attached;
-                } else {
-                    $oldPath = $reg?->{$f};
-                }
-                if ($oldPath) {
-                    Storage::disk('public')->delete($oldPath);
+                if ($reg && $reg->{$f}) {
+                    Storage::disk('public')->delete($reg->{$f});
                 }
                 $result[$f] = $request->file($f)->store('registrations', 'public');
             } else {
-                // Keep existing value
-                if ($f === 'photo_attached') {
-                    $result[$f] = $reg?->award?->photo_attached ?? null;
-                } else {
-                    $result[$f] = $reg?->{$f} ?? null;
-                }
+                $result[$f] = $reg?->{$f} ?? null;
             }
         }
         return $result;
     }
 
     /**
-     * Build members array from flat request inputs.
-     * Server-side amount recalculation: age > 5 → 1000, else → 500.
+     * Build Section 2 members array from request.
+     *
+     * Amount rule:
+     *   relation_id == 1  →  ₹ 0
+     *   any other value   →  ₹ 600
      */
     private function buildMembers(Request $request): array
     {
         $members            = [];
         $names              = $request->input('member_name', []);
-        $sectionDescription = $request->input('section_description'); // single field
+        $sectionDescription = $request->input('section_description');
 
         if (!is_array($names) || empty($names)) {
             return $members;
         }
 
         foreach ($names as $idx => $name) {
-            $mobile = $request->input("member_mobile.{$idx}");
-            if (empty($name) && empty($mobile)) {
+            $surname = $request->input("member_surname.{$idx}");
+            $mobile  = $request->input("member_mobile.{$idx}");
+
+            // Skip fully empty rows
+            if (empty($name) && empty($surname) && empty($mobile)) {
                 continue;
             }
 
-            $age    = $request->input("age.{$idx}");
-            $amount = ($age !== null && $age !== '')
-                ? ((int) $age > 5 ? 1000 : 500)
-                : (float) ($request->input("amount.{$idx}") ?? 0);
+            $relationId = $request->input("relation_id.{$idx}");
+
+            // Server-side amount rule: relation_id=1 → ₹0, else → ₹600
+            if ($relationId !== null && $relationId !== '') {
+                $amount = ((int) $relationId === 1) ? 0 : 600;
+            } else {
+                // No relation selected — fall back to client-submitted value (0)
+                $amount = (float) ($request->input("amount.{$idx}") ?? 0);
+            }
 
             $members[] = [
+                'surname'             => $surname,
                 'name'                => $name,
-                'surname'             => $request->input("member_surname.{$idx}"),
                 'mobile'              => $mobile,
-                'relation_id'         => $request->input("relation_id.{$idx}"),
-                'dob'                 => $request->input("dob.{$idx}"),
-                'age'                 => $age,
-                'food_id'             => $request->input("food_id.{$idx}"),
+                'relation_id'         => $relationId ?: null,
+                'dob'                 => $request->input("dob.{$idx}") ?: null,
+                'age'                 => $request->input("age.{$idx}") !== '' ? $request->input("age.{$idx}") : null,
+                'food_id'             => $request->input("food_id.{$idx}") ?: null,
                 'amount'              => $amount,
                 'section_description' => $sectionDescription,
             ];
@@ -484,27 +512,57 @@ class RegistrationController extends Controller
     }
 
     /**
-     * Calculate Section 3 award amount server-side.
-     * certificate → 500, award → 1000, fallback to submitted value.
+     * Build Section 3 awards array from request.
+     *
+     * Amount rule:
+     *   award_type == 'certificate'  →  ₹ 400
+     *   award_type == 'award'        →  ₹ 600
+     *   not selected                 →  ₹ 0
      */
-    private function calcAwardAmount(Request $request): float
+    private function buildAwards(Request $request): array
     {
-        $map  = ['certificate' => 500, 'award' => 1000];
-        $type = $request->input('award_type');
-        return isset($map[$type])
-            ? (float) $map[$type]
-            : (float) ($request->input('amount_section3') ?? 0);
-    }
+        $awards              = [];
+        $awardNames          = $request->input('award_member_name', []);
+        $section3Description = $request->input('section3_description');
 
-    /**
-     * Return true if any Section 3 field has a value.
-     */
-    private function hasAwardData(Request $request): bool
-    {
-        return $request->filled('award_name')
-            || $request->filled('award_type')
-            || $request->filled('section3_description')
-            || $request->filled('member_first_name')
-            || $request->hasFile('photo_attached');
+        if (!is_array($awardNames) || empty($awardNames)) {
+            return $awards;
+        }
+
+        foreach ($awardNames as $idx => $name) {
+            $surname = $request->input("award_member_surname.{$idx}");
+
+            // Skip fully empty rows
+            if (empty($name) && empty($surname)) {
+                continue;
+            }
+
+            $awardType = $request->input("award_type.{$idx}");
+
+            // Server-side amount rule
+            if ($awardType === 'certificate') {
+                $amount = 400;
+            } elseif ($awardType === 'award') {
+                $amount = 600;
+            } else {
+                $amount = 0;
+            }
+
+            $awards[] = [
+                'section3_description' => $section3Description,
+                'surname'              => $surname,
+                'first_name'           => $name,
+                'gender'               => $request->input("award_gender.{$idx}") ?: null,
+                'department'           => $request->input("award_department.{$idx}"),
+                'award_category'       => $request->input("award_category.{$idx}"),
+                'award_type'           => $awardType ?: null,
+                'food_id'              => $request->input("award_food_id.{$idx}") ?: null,
+                'amount'               => $amount,
+                'special_comment'      => $request->input("award_special_comment.{$idx}"),
+                // photo_attached handled separately (file upload)
+            ];
+        }
+
+        return $awards;
     }
 }

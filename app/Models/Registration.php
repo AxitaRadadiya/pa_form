@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Registration extends Model
 {
@@ -17,7 +16,6 @@ class Registration extends Model
         'company_name',
         'about_company',
         'company_logo',
-        
         'qr_code',
         'screenshot_payment',
         'grand_total',
@@ -50,8 +48,8 @@ class Registration extends Model
         return $this->hasMany(Member::class);
     }
 
-    public function award(): HasOne
+    public function awards(): HasMany   
     {
-        return $this->hasOne(Award::class);
+        return $this->hasMany(Award::class);
     }
 }

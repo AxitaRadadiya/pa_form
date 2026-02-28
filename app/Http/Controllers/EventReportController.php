@@ -22,119 +22,72 @@ class EventReportController extends Controller
     {
         abort_unless($this->isAdmin(), 403);
 
-        // All events and chapters for the dropdowns
-        $events = Event::orderByDesc('created_at')->get();
+        $events   = Event::orderByDesc('created_at')->get();
         $chapters = Chapter::orderBy('name')->get();
 
-        $selectedEvent  = null;
-        $registrations  = collect();
-        $stats          = [];
+        $selectedEvent = null;
+        $registrations = collect();
+        $stats         = [];
+
+        // ── Build query (shared for both event-filtered and all) ──────
+        $regQuery = Registration::with([
+            'user',
+            'chapter',
+            'members.relation',
+            'members.food',
+            'awards.food',          // awards is now HasMany
+        ]);
 
         if ($request->filled('event_id')) {
             $selectedEvent = Event::findOrFail($request->event_id);
-
-            // Build registration query for this event
-            $regQuery = Registration::where('event_id', $selectedEvent->id)
-                ->with([
-                    'user',
-                    'chapter',
-                    'members.relation',
-                    'members.food',
-                    'award.food',
-                    'award.relation',
-                ]);
-
-            // Apply chapter filter when provided
-            if ($request->filled('chapter_id')) {
-                $regQuery->where('chapter_id', $request->chapter_id);
-            }
-
-            // Apply mobile search across members
-            if ($request->filled('mobile')) {
-                $mobile = $request->mobile;
-                $regQuery->whereHas('members', function($q) use ($mobile) {
-                    $q->where('mobile', 'like', "%{$mobile}%");
-                });
-            }
-
-            $registrations = $regQuery->orderByDesc('created_at')->get();
-
-            // Summary stats
-            $totalMembers     = $registrations->sum(fn($r) => $r->members->count());
-            $totalAwards      = $registrations->filter(fn($r) => $r->award)->count();
-            $totalAmount      = $registrations->sum('grand_total');
-            $totalRegistrations = $registrations->count();
-
-            // Food preference breakdown (members)
-            $foodBreakdown = $registrations
-                ->flatMap(fn($r) => $r->members)
-                ->groupBy(fn($m) => $m->food?->name ?? 'Not Selected')
-                ->map(fn($group) => $group->count());
-
-            // Food preference breakdown (awards)
-            $awardFoodBreakdown = $registrations
-                ->filter(fn($r) => $r->award && $r->award->food)
-                ->groupBy(fn($r) => $r->award->food->name)
-                ->map(fn($group) => $group->count());
-
-            $stats = compact(
-                'totalRegistrations',
-                'totalMembers',
-                'totalAwards',
-                'totalAmount',
-                'foodBreakdown',
-                'awardFoodBreakdown'
-            );
+            $regQuery->where('event_id', $selectedEvent->id);
         }
 
-        // If no event selected, load all registrations and compute overall stats
-        if (! $request->filled('event_id')) {
-            $regQuery = Registration::with([
-                    'user',
-                    'chapter',
-                    'members.relation',
-                    'members.food',
-                    'award.food',
-                    'award.relation',
-                ]);
-
-            if ($request->filled('chapter_id')) {
-                $regQuery->where('chapter_id', $request->chapter_id);
-            }
-
-            if ($request->filled('mobile')) {
-                $mobile = $request->mobile;
-                $regQuery->whereHas('members', function($q) use ($mobile) {
-                    $q->where('mobile', 'like', "%{$mobile}%");
-                });
-            }
-
-            $registrations = $regQuery->orderByDesc('created_at')->get();
-
-            $totalMembers     = $registrations->sum(fn($r) => $r->members->count());
-            $totalAwards      = $registrations->filter(fn($r) => $r->award)->count();
-            $totalAmount      = $registrations->sum('grand_total');
-            $totalRegistrations = $registrations->count();
-
-            $foodBreakdown = $registrations
-                ->flatMap(fn($r) => $r->members)
-                ->groupBy(fn($m) => $m->food?->name ?? 'Not Selected')
-                ->map(fn($group) => $group->count());
-
-            $awardFoodBreakdown = $registrations
-                ->filter(fn($r) => $r->award && $r->award->food)
-                ->groupBy(fn($r) => $r->award->food->name)
-                ->map(fn($group) => $group->count());
-
-            $stats = compact(
-                'totalRegistrations',
-                'totalMembers',
-                'totalAwards',
-                'totalAmount',
-                'foodBreakdown',
-                'awardFoodBreakdown'
-            );
+        if ($request->filled('chapter_id')) {
+            $regQuery->where('chapter_id', $request->chapter_id);
         }
+
+        if ($request->filled('mobile')) {
+            $mobile = $request->mobile;
+            // Only match the registrant (PA member) mobile stored on the users table
+            $regQuery->whereHas('user', function ($q) use ($mobile) {
+                $q->where('mobile', 'like', "%{$mobile}%");
+            });
+        }
+
+        $registrations = $regQuery->orderByDesc('created_at')->get();
+
+        // ── Summary stats ─────────────────────────────────────────────
+        $totalRegistrations = $registrations->count();
+        $totalMembers       = $registrations->sum(fn($r) => $r->members->count());
+
+        // Total individual award ROWS (not just registrations that have awards)
+        $totalAwards        = $registrations->sum(fn($r) => $r->awards->count());
+
+        // Grand total collected
+        $totalAmount        = $registrations->sum('grand_total');
+
+        // Food breakdown — members
+        $foodBreakdown = $registrations
+            ->flatMap(fn($r) => $r->members)
+            ->groupBy(fn($m) => $m->food?->name ?? 'Not Selected')
+            ->map(fn($group) => $group->count());
+
+        // Food breakdown — awards (each award row, not just first)
+        $awardFoodBreakdown = $registrations
+            ->flatMap(fn($r) => $r->awards)
+            ->filter(fn($a) => $a && $a->food)
+            ->groupBy(fn($a) => $a->food->name)
+            ->map(fn($group) => $group->count());
+
+        $stats = compact(
+            'totalRegistrations',
+            'totalMembers',
+            'totalAwards',
+            'totalAmount',
+            'foodBreakdown',
+            'awardFoodBreakdown'
+        );
 
         return view('admin.reports.event-report', compact(
             'events',
@@ -144,163 +97,197 @@ class EventReportController extends Controller
             'stats'
         ));
     }
+
+    // ---------------------------------------------------------------
+    // EXPORT EXCEL
+    // ---------------------------------------------------------------
     public function exportExcel(Request $request)
     {
         abort_unless($this->isAdmin(), 403);
 
-        // event_id optional — if omitted, export all registrations
+        $event = null;
         if ($request->filled('event_id')) {
             $request->validate(['event_id' => 'integer|exists:events,id']);
             $event = Event::findOrFail($request->event_id);
-        } else {
-            $event = null;
         }
 
         $regQuery = Registration::with([
-            'user', 'chapter', 'members.relation', 'members.food',
-            'award.food', 'award.relation',
+            'user', 'chapter',
+            'members.relation', 'members.food',
+            'awards.food',
         ]);
-        if ($event)                        $regQuery->where('event_id', $event->id);
-        if ($request->filled('chapter_id')) $regQuery->where('chapter_id', $request->chapter_id);
+
+        if ($event)                          $regQuery->where('event_id', $event->id);
+        if ($request->filled('chapter_id'))  $regQuery->where('chapter_id', $request->chapter_id);
         if ($request->filled('mobile')) {
             $mobile = $request->mobile;
-            $regQuery->whereHas('members', fn($q) => $q->where('mobile', 'like', "%{$mobile}%"));
+            // Only match the registrant (PA member) mobile for export
+            $regQuery->whereHas('user', fn($q3) => $q3->where('mobile', 'like', "%{$mobile}%"));
         }
+
         $registrations = $regQuery->orderByDesc('created_at')->get();
 
-        // ── Build workbook ────────────────────────────────────────────────────
+        // ── Build workbook ───────────────────────────────────────────
         $wb = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
         $ws = $wb->getActiveSheet()->setTitle('Event Report');
 
-        // Shorthand helpers
         $style = fn($range, array $arr) => $ws->getStyle($range)->applyFromArray($arr);
-        // Minimal styling: no background fills, black text, simple thin black borders
-        $bg    = fn($hex = null)        => [];
-        $fnt   = fn($hex = null, $bold = true, $sz = 9) => ['font' => ['name' => 'Arial', 'bold' => $bold, 'size' => $sz, 'color' => ['argb' => 'FF000000']]];
-        $aln   = fn($h='left',$wrap=false) => ['alignment' => ['horizontal'=>$h,'vertical'=>'center','wrapText'=>$wrap]];
-        $bdr   = fn($hex='000000') => ['borders'=>['allBorders'=>['borderStyle'=>'thin','color'=>['argb'=>'FF000000']]]];
 
-        $set = function(string $cell, $val, string $bgHex, string $h='left', bool $wrap=false, bool $bold=false) use ($ws, $style, $bg, $fnt, $aln, $bdr) {
+        // All text BLACK (000000), all BG WHITE (FFFFFF) — no color
+        $fnt = fn($bold = false, $sz = 9) => [
+            'font' => [
+                'name'  => 'Arial',
+                'bold'  => $bold,
+                'size'  => $sz,
+                'color' => ['argb' => 'FF000000'],
+            ],
+        ];
+        $aln = fn($h = 'left', $wrap = false) => [
+            'alignment' => [
+                'horizontal' => $h,
+                'vertical'   => 'center',
+                'wrapText'   => $wrap,
+            ],
+        ];
+        $bdr = fn() => [
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => 'thin',
+                    'color'       => ['argb' => 'FF000000'],
+                ],
+            ],
+        ];
+        $bgWhite = [
+            'fill' => [
+                'fillType'   => 'solid',
+                'startColor' => ['argb' => 'FFFFFFFF'],
+            ],
+        ];
+
+        // $set  — single cell, white bg, black text, border
+        $set = function (string $cell, $val, string $h = 'left', bool $bold = false) use ($ws, $style, $fnt, $aln, $bdr, $bgWhite) {
             $ws->setCellValue($cell, $val ?? '');
-            $style($cell, array_merge($bg($bgHex), $fnt('111111',$bold,9), $aln($h,$wrap), $bdr()));
+            $style($cell, array_merge($bgWhite, $fnt($bold, 9), $aln($h), $bdr()));
         };
 
-        $mergeSet = function(string $col, int $r, int $rows, $val, string $bgHex, string $h='left') use ($ws, $style, $bg, $fnt, $aln, $bdr) {
-            $range = $rows > 1 ? "{$col}{$r}:{$col}".($r+$rows-1) : "{$col}{$r}";
+        // $mergeSet — merged rows, white bg, black text, border
+        $mergeSet = function (string $col, int $r, int $rows, $val, string $h = 'left', bool $bold = false) use ($ws, $style, $fnt, $aln, $bdr, $bgWhite) {
+            $range = $rows > 1 ? "{$col}{$r}:{$col}" . ($r + $rows - 1) : "{$col}{$r}";
             if ($rows > 1) $ws->mergeCells($range);
             $ws->setCellValue("{$col}{$r}", $val ?? '');
-            $style($range, array_merge($bg($bgHex), $fnt('111111',false,9), $aln($h), $bdr()));
+            $style($range, array_merge($bgWhite, $fnt($bold, 9), $aln($h), $bdr()));
         };
 
         // Column widths
         foreach ([
-            'A'=>6,'B'=>24,'C'=>14,'D'=>20,'E'=>26,'F'=>22,'G'=>22,'H'=>18,'I'=>3,
-            'J'=>22,'K'=>22,'L'=>20,'M'=>22,'N'=>3,'O'=>22,
-            'P'=>10,'Q'=>20,'R'=>20,'S'=>14,'T'=>32,'U'=>24,'V'=>10,
+            'A' => 6,  'B' => 24, 'C' => 14, 'D' => 20, 'E' => 26,
+            'F' => 22, 'G' => 22, 'H' => 18,
+            'I' => 22, 'J' => 22, 'K' => 20, 'L' => 22,
+            'M' => 22, 'N' => 10, 'O' => 20, 'P' => 20,
+            'Q' => 14, 'R' => 32, 'S' => 24, 'T' => 10,
         ] as $col => $w) {
             $ws->getColumnDimension($col)->setWidth($w);
         }
 
-        // Row 1: Title
-        $eventLabel = $event ? $event->name : 'All Events';
-        $ws->mergeCells('A1:V1');
-        $ws->setCellValue('A1', 'EVENT ATTENDANCE & AWARD REPORT — '.strtoupper($eventLabel));
-        $ws->getRowDimension(1)->setRowHeight(28);
-        $style('A1:V1', array_merge($bg('251C4B'), $fnt('FFFFFF',true,13), $aln('center')));
-
-        // Row 2: Meta
-        $ws->mergeCells('A2:V2');
-        $ws->getRowDimension(2)->setRowHeight(18);
-        $style('A2:V2', array_merge($bg('EBEBEB'), $fnt('444444',false,8), $aln('center')));
-
-        // Row 3: Spacer
-        $ws->getRowDimension(3)->setRowHeight(5);
-        $style('A3:V3', $bg('D5D0EA'));
-
-        // Row 4: Part headers
-        $ws->getRowDimension(4)->setRowHeight(26);
+        // ── Row 1: Part headers (bold, white bg, black text) ─────────
+        $ws->getRowDimension(1)->setRowHeight(22);
         foreach ([
-            ['A4:H4', 'Part 1  ( PA Member )',                            '3B2F7F'],
-            ['I4:I4', '',                                                  '251C4B'],
-            ['J4:M4', 'Part 2  ( Business Partner / Guest / Family )',    '1F5C8B'],
-            ['N4:N4', '',                                                  '251C4B'],
-            ['O4:V4', 'Part 3  ( Team Member / Award )',                  '7B3F00'],
-        ] as [$range, $text, $bgHex]) {
+            ['A1:H1', 'Part 1 — PA Member'],
+            ['I1:L1', 'Part 2 — Business Partner / Guest / Family'],
+            ['M1:T1', 'Part 3 — Team Member / Award'],
+        ] as [$range, $text]) {
             $ws->mergeCells($range);
             $ws->setCellValue(explode(':', $range)[0], $text);
-            $style($range, array_merge($bg($bgHex), $fnt('FFFFFF',true,11), $aln('center')));
+            $style($range, array_merge($bgWhite, $fnt(true, 10), $aln('center'), $bdr()));
         }
 
-        // Row 5: Column headers
-        $ws->getRowDimension(5)->setRowHeight(34);
+        // ── Row 2: Column headers (bold) ─────────────────────────────
+        $ws->getRowDimension(2)->setRowHeight(30);
         foreach ([
-            ['A5','Sr. No.','C5B8F0','251C4B'],    ['B5','Company Name','C5B8F0','251C4B'],
-            ['C5','Company Logo','C5B8F0','251C4B'], ['D5','Chapter Name','C5B8F0','251C4B'],
-            ['E5','GA Member Name (Chain)','C5B8F0','251C4B'],['F5','PA Member Name','C5B8F0','251C4B'],
-            ['G5','PA Member Surname','C5B8F0','251C4B'],['H5','Mobile Number','C5B8F0','251C4B'],
-            ['I5','','251C4B','FFFFFF'],
-            ['J5','Name','B8D6F0','1F5C8B'],['K5','Surname','B8D6F0','1F5C8B'],
-            ['L5','Relation','B8D6F0','1F5C8B'],['M5','Food Preference','B8D6F0','1F5C8B'],
-            ['N5','','251C4B','FFFFFF'],
-            ['O5','Team Member Surname','F0D9B8','7B3F00'],['P5','Gender','F0D9B8','7B3F00'],
-            ['Q5','Food Preference','F0D9B8','7B3F00'],['R5','Designation','F0D9B8','7B3F00'],
-            ['S5','Award Type','F0D9B8','7B3F00'],['T5','Award Category (Title)','F0D9B8','7B3F00'],
-            ['U5','Special Remarks','F0D9B8','7B3F00'],['V5','Photo','F0D9B8','7B3F00'],
-        ] as [$cell, $label, $bgHex, $txtHex]) {
+            ['A2', 'Sr. No.'],
+            ['B2', 'Company Name'],
+            ['C2', 'Company Logo'],
+            ['D2', 'Chapter Name'],
+            ['E2', 'GA Member (Chain)'],
+            ['F2', 'PA Member First Name'],
+            ['G2', 'PA Member Last Name'],
+            ['H2', 'Mobile Number'],
+            ['I2', 'Member Name'],
+            ['J2', 'Member Surname'],
+            ['K2', 'Relation'],
+            ['L2', 'Food Preference'],
+            ['M2', 'Award Member Name'],
+            ['N2', 'Award Member Surname'],
+            ['O2', 'Gender'],
+            ['P2', 'Department'],
+            ['Q2', 'Award Type'],
+            ['R2', 'Award Category'],
+            ['S2', 'Special Comment'],
+            ['T2', 'Amount (₹)'],
+        ] as [$cell, $label]) {
             $ws->setCellValue($cell, $label);
-            $style($cell, array_merge($bg($bgHex), $fnt($txtHex,true,8.5), $aln('center',true), $bdr()));
+            $style($cell, array_merge($bgWhite, $fnt(true, 8.5), $aln('center', true), $bdr()));
         }
 
-        // Data rows
-        $row = 6;
+        // ── Row 3: blank spacer (keep row height small) ───────────────
+        // (removed — data starts directly at row 4 as requested)
+
+        // ── Data rows start at ROW 4 ──────────────────────────────────
+        $row = 4;
         $sr  = 1;
+
         foreach ($registrations as $reg) {
             $memberCount = $reg->members->count();
-            $rowCount    = max($memberCount, 1);
-            for ($ri = 0; $ri < $rowCount; $ri++) $ws->getRowDimension($row+$ri)->setRowHeight(18);
+            $awardCount  = $reg->awards->count();
+            $rowCount    = max($memberCount, $awardCount, 1);
 
-            $b1 = $sr%2===0 ? 'F9F8FF' : 'EFECFF';
-            $b2 = $sr%2===0 ? 'F5FAFF' : 'E8F3FF';
-            $b3 = $sr%2===0 ? 'FFFAF3' : 'FFF4E5';
-            $sp = 'D0CCE8';
+            for ($ri = 0; $ri < $rowCount; $ri++) {
+                $ws->getRowDimension($row + $ri)->setRowHeight(18);
+            }
 
-            // Part 1 (merged per registration)
-            $mergeSet('A',$row,$rowCount,$sr,                      $b1,'center');
-            $mergeSet('B',$row,$rowCount,$reg->company_name,        $b1);
-            $mergeSet('C',$row,$rowCount,$reg->company_logo ?? '',   $b1);
-            $mergeSet('D',$row,$rowCount,$reg->chapter?->name,      $b1);
-            $mergeSet('E',$row,$rowCount,$reg->chain_name,          $b1);
-            $mergeSet('F',$row,$rowCount,$reg->first_name,          $b1);
-            $mergeSet('G',$row,$rowCount,$reg->last_name,           $b1);
-            $mergeSet('H',$row,$rowCount,$reg->mobile ?? '',        $b1,'center');
-          
+            // Part 1 — merged per registration, white bg black text
+            $mergeSet('A', $row, $rowCount, $sr,                           'center');
+            $mergeSet('B', $row, $rowCount, $reg->company_name);
+            $mergeSet('C', $row, $rowCount, $reg->company_logo ?? '');
+            $mergeSet('D', $row, $rowCount, $reg->chapter?->name);
+            $mergeSet('E', $row, $rowCount, $reg->chain_name);
+            $mergeSet('F', $row, $rowCount, $reg->user?->first_name ?? '');
+            $mergeSet('G', $row, $rowCount, $reg->user?->last_name  ?? '');
+            $mergeSet('H', $row, $rowCount, $reg->user?->mobile     ?? '', 'center');
 
-            for ($ri=0;$ri<$rowCount;$ri++) $ws->getStyle('I'.($row+$ri))->applyFromArray($bg($sp));
-
-            // Part 2 (one row per member)
+            // Part 2 — one row per member
             foreach ($reg->members as $mi => $m) {
                 $r = $row + $mi;
-                $set('J'.$r, $m->name,             $b2);
-                $set('K'.$r, $m->surname ?? '',    $b2);
-                $set('L'.$r, $m->relation?->name,  $b2);
-                $set('M'.$r, $m->food?->name,      $b2);
+                $set('I' . $r, $m->name);
+                $set('J' . $r, $m->surname ?? '');
+                $set('K' . $r, $m->relation?->name ?? '');
+                $set('L' . $r, $m->food?->name ?? '');
             }
-            for ($ri=$memberCount;$ri<$rowCount;$ri++) {
-                foreach(['J','K','L','M'] as $c) $ws->getStyle($c.($row+$ri))->applyFromArray($bg($b2));
+            // Fill empty member rows with white+border
+            for ($ri = $memberCount; $ri < $rowCount; $ri++) {
+                foreach (['I', 'J', 'K', 'L'] as $c) {
+                    $set($c . ($row + $ri), '');
+                }
             }
 
-            for ($ri=0;$ri<$rowCount;$ri++) $ws->getStyle('N'.($row+$ri))->applyFromArray($bg($sp));
-
-            // Part 3 (award, merged) — use full name (first + last)
-            $a = $reg->award;
-            $mergeSet('O',$row,$rowCount,trim(($a?->first_name ?? '') . ' ' . ($a?->last_name ?? '')),          $b3);
-            $mergeSet('P',$row,$rowCount,'',                      $b3,'center');
-            $mergeSet('Q',$row,$rowCount,$a?->food?->name,        $b3);
-            $mergeSet('R',$row,$rowCount,$a?->relation?->name,    $b3);
-            $mergeSet('S',$row,$rowCount,$a?->award_type,         $b3,'center');
-            $mergeSet('T',$row,$rowCount,$a?->award_name,         $b3);
-            $mergeSet('U',$row,$rowCount,$a?->special_comment,    $b3);
-            $mergeSet('V',$row,$rowCount,$a?->photo_attached?'Yes':'No', $b3,'center');
+            // Part 3 — one row per award
+            foreach ($reg->awards as $ai => $a) {
+                $r = $row + $ai;
+                $set('M' . $r, $a->first_name    ?? '');
+                $set('N' . $r, $a->surname       ?? '');
+                $set('O' . $r, $a->gender        ?? '', 'center');
+                $set('P' . $r, $a->department    ?? '');
+                $set('Q' . $r, $a->award_type    ?? '', 'center');
+                $set('R' . $r, $a->award_category ?? '');
+                $set('S' . $r, $a->special_comment ?? '');
+                $set('T' . $r, number_format($a->amount ?? 0, 2), 'right');
+            }
+            // Fill empty award rows with white+border
+            for ($ri = $awardCount; $ri < $rowCount; $ri++) {
+                foreach (['M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T'] as $c) {
+                    $set($c . ($row + $ri), '');
+                }
+            }
 
             $row += $rowCount;
             $sr++;
@@ -308,25 +295,26 @@ class EventReportController extends Controller
 
         // Summary row
         $ws->getRowDimension($row)->setRowHeight(20);
-        $ws->mergeCells("A{$row}:V{$row}");
-        $totalMembers = $registrations->sum(fn($r) => $r->members->count());
-        $totalAwards  = $registrations->filter(fn($r) => $r->award)->count();
-        $ws->setCellValue("A{$row}", "Total Registrations: {$registrations->count()}   |   Total Members: {$totalMembers}   |   Total Awards: {$totalAwards}");
-        $style("A{$row}:V{$row}", array_merge($bg('251C4B'), $fnt('FFFFFF',true,9), $aln('center')));
+        $ws->mergeCells("A{$row}:T{$row}");
+        $totalMembersSum = $registrations->sum(fn($r) => $r->members->count());
+        $totalAwardsSum  = $registrations->sum(fn($r) => $r->awards->count());
+        $ws->setCellValue("A{$row}", "Total Registrations: {$registrations->count()}   |   Total Members: {$totalMembersSum}   |   Total Awards: {$totalAwardsSum}");
+        $style("A{$row}:T{$row}", array_merge($bgWhite, $fnt(true, 9), $aln('center')));
 
-        // Freeze panes + page setup
-        $ws->freezePane('A6');
+        // Freeze header rows, page setup
+        $ws->freezePane('A4');
         $ws->getPageSetup()
             ->setOrientation(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::ORIENTATION_LANDSCAPE)
-            ->setFitToWidth(1)->setFitToPage(true);
-        $ws->getPageSetup()->setRowsToRepeatAtTopByStartAndEnd(4, 5);
+            ->setFitToWidth(1)
+            ->setFitToPage(true);
+        $ws->getPageSetup()->setRowsToRepeatAtTopByStartAndEnd(1, 2);
 
         // Stream
-        $slug     = $event ? str_replace(' ','-',strtolower($event->name)) : 'all-events';
-        $filename = 'event-report-'.$slug.'-'.now()->format('Ymd').'.xlsx';
+        $slug     = $event ? str_replace(' ', '-', strtolower($event->name)) : 'all-events';
+        $filename = 'event-report-' . $slug . '-' . now()->format('Ymd') . '.xlsx';
         $writer   = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($wb);
 
-        return response()->streamDownload(function() use ($writer) {
+        return response()->streamDownload(function () use ($writer) {
             $writer->save('php://output');
         }, $filename, [
             'Content-Type'        => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -335,8 +323,7 @@ class EventReportController extends Controller
         ]);
     }
 
-    
-
+    // ---------------------------------------------------------------
     private function isAdmin(): bool
     {
         $user = auth()->user();

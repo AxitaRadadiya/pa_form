@@ -11,16 +11,26 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('registration_id')->constrained('registrations')->cascadeOnDelete();
             $table->text('section3_description')->nullable();
-            $table->string('award_name')->nullable();
-            $table->string('first_name')->nullable();
-            $table->string('last_name')->nullable();
-            $table->string('gender')->nullable();
-            $table->string('award_type')->nullable();
+
+            // Member info for this award
+            $table->string('surname')->nullable();           // ← ADDED  (award_member_surname[])
+            $table->string('first_name')->nullable();        // maps to award_member_name[]
+            $table->string('gender')->nullable();            // male | female
+
+            // Award details
+            $table->string('department')->nullable();        // ← ADDED  (award_department[])
+            $table->string('award_category')->nullable();    // ← ADDED  (award_category[])
+            $table->string('award_type')->nullable();        // certificate | award
+
+            // Extras
             $table->string('photo_attached')->nullable();
             $table->foreignId('food_id')->nullable()->constrained('foods')->nullOnDelete();
-            $table->foreignId('relation_id')->nullable()->constrained('relations')->nullOnDelete();
-            $table->decimal('amount_section3', 10, 2)->nullable();
-            $table->decimal('amount', 10, 2)->nullable();
+            $table->decimal('amount', 10, 2)->nullable();    // certificate=400, award=600
+            $table->text('special_comment')->nullable();     // ← ADDED  (award_special_comment[])
+
+            // REMOVED columns (no longer used):
+            //   award_name, last_name, relation_id, amount_section3
+
             $table->timestamps();
         });
     }

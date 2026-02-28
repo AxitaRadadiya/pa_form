@@ -10,11 +10,12 @@ return new class extends Migration {
         Schema::create('members', function (Blueprint $table) {
             $table->id();
             $table->foreignId('registration_id')->constrained('registrations')->cascadeOnDelete();
+            $table->string('surname')->nullable();           // ← ADDED (member_surname[])
             $table->string('name')->nullable();
             $table->string('mobile')->nullable();
-            $table->string('dob')->nullable();
-            $table->string('age')->nullable();
-            $table->string('amount')->nullable();
+            $table->date('dob')->nullable();                 // ← changed string → date (proper type)
+            $table->unsignedTinyInteger('age')->nullable();  // ← changed string → tinyInteger
+            $table->decimal('amount', 10, 2)->nullable();    // ← changed string → decimal (proper type)
             $table->foreignId('relation_id')->nullable()->constrained('relations')->nullOnDelete();
             $table->foreignId('food_id')->nullable()->constrained('foods')->nullOnDelete();
             $table->text('section_description')->nullable();

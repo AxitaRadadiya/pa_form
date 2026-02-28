@@ -131,31 +131,30 @@
             @if($registrations->isNotEmpty())
             <div class="no-print">
                 @if(isset($selectedEvent) && $selectedEvent)
-                    {{-- Excel Export (PA Form format) --}}
                     <a href="{{ route('reports.event.exportExcel', array_filter(['event_id' => $selectedEvent->id, 'chapter_id' => request('chapter_id'), 'mobile' => request('mobile')])) }}"
-                       class="btn btn-sm btn-success mr-2">
-                        <i class="mdi mdi-file-excel mr-1"></i> Export Excel (PA Format)
+                       class="btn btn-sm btn-save mr-2">
+                        <i class="mdi mdi-file-excel mr-1"></i> Export Excel
                     </a>
                 @else
-                    {{-- Export all without event filter --}}
                     <a href="{{ route('reports.event.exportExcel', array_filter(['chapter_id' => request('chapter_id'), 'mobile' => request('mobile')])) }}"
-                       class="btn btn-sm btn-success mr-2">
-                        <i class="mdi mdi-file-excel mr-1"></i> Export Excel (PA Format)
+                       class="btn btn-sm btn-save mr-2">
+                        <i class="mdi mdi-file-excel mr-1"></i> Export Excel
                     </a>
                 @endif
             </div>
             @endif
         </div>
 
-        {{-- ── Event Filter Form ── --}}
+        {{-- ── Filter Form ── --}}
         <div class="card mb-3 shadow-sm no-print">
             <div class="card-body py-3">
-                <form method="GET" action="{{ route('reports.event') }}" class="form-inline">
-                    <label class="mr-2 font-weight-600" style="font-size:.85rem;color:#251c4b;">
-                        <i class="mdi mdi-calendar-search mr-1"></i> Select Event:
+                <form method="GET" action="{{ route('reports.event') }}" class="form-inline flex-wrap" style="gap:.5rem;">
+
+                    <label class="mr-1 font-weight-600" style="font-size:.85rem;color:#251c4b;">
+                        <i class="mdi mdi-calendar-search mr-1"></i> Event:
                     </label>
-                    <select name="event_id" class="form-control mr-3" style="min-width:260px;" onchange="this.form.submit()">
-                        <option value="">— Choose an Event —</option>
+                    <select name="event_id" class="form-control mr-3" style="min-width:240px;" onchange="this.form.submit()">
+                        <option value="">— All Events —</option>
                         @foreach($events as $e)
                             <option value="{{ $e->id }}"
                                 {{ (isset($selectedEvent) && $selectedEvent?->id == $e->id) ? 'selected' : '' }}>
@@ -164,33 +163,29 @@
                             </option>
                         @endforeach
                     </select>
-                    
-                    {{-- Chapter filter --}}
-                    <label class="mr-2 font-weight-600" style="font-size:.85rem;color:#251c4b;">
+
+                    <label class="mr-1 font-weight-600" style="font-size:.85rem;color:#251c4b;">
                         <i class="mdi mdi-map-marker mr-1"></i> Chapter:
                     </label>
-                     <select id="chapter_id" name="chapter_id" class="form-control">
-                                            <option value="">— Select Chapter —</option>
-                                            @if(isset($chapters))
-                                                @foreach($chapters as $c)
-                                                    <option value="{{ $c->id }}"
-                                                        {{ old('chapter_id') == $c->id ? 'selected' : '' }}>
-                                                        {{ $c->name }}
-                                                    </option>
-                                                @endforeach
-                                            @endif
-                                        </select>
+                    <select name="chapter_id" class="form-control mr-3" style="min-width:180px;">
+                        <option value="">— All Chapters —</option>
+                        @foreach($chapters as $c)
+                            <option value="{{ $c->id }}"
+                                {{ request('chapter_id') == $c->id ? 'selected' : '' }}>
+                                {{ $c->name }}
+                            </option>
+                        @endforeach
+                    </select>
 
-                    {{-- Mobile search --}}
-                    <div class="input-group mr-3" style="min-width:220px;">
-                        <input type="text" name="mobile" class="form-control" placeholder="Search mobile number" value="{{ request('mobile') }}">
+                    <div class="input-group mr-2" style="min-width:200px;">
+                        <input type="text" name="mobile" class="form-control"
+                               placeholder="Search mobile…" value="{{ request('mobile') }}">
                         <div class="input-group-append">
-                            <button class="btn btn-sm btn-outline-primary" type="submit"><i class="mdi mdi-magnify"></i></button>
+                            <button class="btn btn-sm btn-outline-primary" type="submit">
+                                <i class="mdi mdi-magnify"></i>
+                            </button>
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-sm" style="background:#251c4b;color:#fff;">
-                        <i class="mdi mdi-magnify mr-1"></i> View Report
-                    </button>
                 </form>
             </div>
         </div>
@@ -198,7 +193,11 @@
         @if($registrations->isNotEmpty())
 
         {{-- ── Summary Stats ── --}}
+        @php
+            $awardAmount = $registrations->flatMap(function($reg) { return $reg->awards; })->sum(function($a) { return $a->amount ?? 0; });
+        @endphp
         <div class="row mb-3">
+
             <div class="col-6 col-md-3">
                 <div class="stat-card" style="background:#251c4b;">
                     <div class="stat-label">Total Registrations</div>
@@ -206,6 +205,7 @@
                     <div class="stat-sub">Companies / families</div>
                 </div>
             </div>
+
             <div class="col-6 col-md-3">
                 <div class="stat-card" style="background:#1a7abf;">
                     <div class="stat-label">Total Members</div>
@@ -213,20 +213,25 @@
                     <div class="stat-sub">Attending (Section 2)</div>
                 </div>
             </div>
-            <div class="col-6 col-md-3">
+
+            <div class="col-6 col-md-3 mt-3 mt-md-0">
                 <div class="stat-card" style="background:#b8860b;">
                     <div class="stat-label">Awards / Certs</div>
                     <div class="stat-value">{{ $stats['totalAwards'] }}</div>
                     <div class="stat-sub">Section 3 entries</div>
                 </div>
             </div>
-            <div class="col-6 col-md-3">
+
+            <div class="col-6 col-md-3 mt-3 mt-md-0">
                 <div class="stat-card" style="background:#1a7a4a;">
                     <div class="stat-label">Total Amount</div>
-                    <div class="stat-value">₹{{ number_format($stats['totalAmount'], 0) }}</div>
+                    <div class="stat-value">
+                        ₹{{ number_format($stats['totalAmount'] + $awardAmount, 2) }}
+                    </div>
                     <div class="stat-sub">Grand total collected</div>
                 </div>
             </div>
+
         </div>
 
         {{-- ── Food Breakdown ── --}}
@@ -237,7 +242,7 @@
                 <h6 class="section-title">Food Preference Breakdown</h6>
             </div>
             <div class="card-body py-2">
-                <div class="d-flex flex-wrap gap-2">
+                <div class="d-flex flex-wrap" style="gap:.4rem;">
                     <strong class="mr-2" style="font-size:.82rem;">Members:</strong>
                     @foreach($stats['foodBreakdown'] as $food => $count)
                         <span class="food-pill">{{ $food }}: <strong>{{ $count }}</strong></span>
@@ -247,7 +252,9 @@
                         <span class="mx-2 text-muted">|</span>
                         <strong class="mr-2" style="font-size:.82rem;">Awards:</strong>
                         @foreach($stats['awardFoodBreakdown'] as $food => $count)
-                            <span class="food-pill" style="background:#fff3cd;color:#856404;">{{ $food }}: <strong>{{ $count }}</strong></span>
+                            <span class="food-pill" style="background:#fff3cd;color:#856404;">
+                                {{ $food }}: <strong>{{ $count }}</strong>
+                            </span>
                         @endforeach
                     @endif
                 </div>
@@ -256,7 +263,7 @@
         @endif
 
         {{-- ═══════════════════════════════════════════════════════════
-             SECTION 2 — Member Details Table
+             SECTION 2 — Member Details
         ═══════════════════════════════════════════════════════════ --}}
         <div class="card mb-3 shadow-sm">
             <div class="section-header">
@@ -266,13 +273,6 @@
                     {{ $stats['totalMembers'] }} Members across {{ $stats['totalRegistrations'] }} registrations
                 </span>
             </div>
-
-            @if($registrations->isEmpty())
-                <div class="no-data">
-                    <i class="mdi mdi-account-off"></i>
-                    No registrations found for this event.
-                </div>
-            @else
             <div class="table-responsive">
                 <table class="table table-bordered table-hover mb-0">
                     <thead style="background:#f1f3f9;">
@@ -280,6 +280,7 @@
                             <th>#</th>
                             <th>Company / PA Member</th>
                             <th>Chapter</th>
+                            <th>Surname</th>
                             <th>Member Name</th>
                             <th>Mobile</th>
                             <th>Relation</th>
@@ -296,8 +297,11 @@
                         @forelse($registrations as $reg)
                             @php
                                 $regSerial++;
-                                $members = $reg->members;
+                                $members  = $reg->members;
                                 $rowCount = max($members->count(), 1);
+                                // PA member info comes from user relationship
+                                $paName   = trim(($reg->user?->first_name ?? '') . ' ' . ($reg->user?->last_name ?? ''));
+                                $paMobile = $reg->user?->mobile ?? '';
                             @endphp
 
                             @if($members->isEmpty())
@@ -305,12 +309,12 @@
                                 <td>{{ $regSerial }}</td>
                                 <td>
                                     <div class="reg-company">{{ $reg->company_name ?? '—' }}</div>
-                                    <div class="reg-meta">{{ trim(($reg->first_name ?? '') . ' ' . ($reg->last_name ?? '')) ?: '—' }}</div>
+                                    <div class="reg-meta">{{ $paName ?: '—' }}</div>
                                 </td>
                                 <td class="reg-meta">{{ $reg->chapter?->name ?? '—' }}</td>
-                                <td colspan="7" class="text-muted" style="font-size:.78rem;">No members added</td>
+                                <td colspan="8" class="text-muted" style="font-size:.78rem;">No members added</td>
                                 <td>{{ $reg->transaction_id ?? '—' }}</td>
-                                <td class="text-right font-weight-bold">{{ number_format($reg->grand_total, 2) }}</td>
+                                <td class="text-right font-weight-bold">₹{{ number_format($reg->grand_total, 2) }}</td>
                             </tr>
                             @else
                                 @foreach($members as $mi => $member)
@@ -319,10 +323,18 @@
                                     <td rowspan="{{ $rowCount }}">{{ $regSerial }}</td>
                                     <td rowspan="{{ $rowCount }}">
                                         <div class="reg-company">{{ $reg->company_name ?? '—' }}</div>
-                                        <div class="reg-meta">{{ trim(($reg->first_name ?? '') . ' ' . ($reg->last_name ?? '')) }}</div>
+                                        <div class="reg-meta">
+                                            {{ $paName ?: '—' }}
+                                            @if($paMobile)
+                                                <span class="ml-1">· {{ $paMobile }}</span>
+                                            @endif
+                                        </div>
                                     </td>
                                     <td rowspan="{{ $rowCount }}" class="reg-meta">{{ $reg->chapter?->name ?? '—' }}</td>
                                     @endif
+
+                                    {{-- Member data — fields match members table --}}
+                                    <td>{{ $member->surname ?? '—' }}</td>
                                     <td>{{ $member->name ?? '—' }}</td>
                                     <td>{{ $member->mobile ?? '—' }}</td>
                                     <td>
@@ -339,9 +351,12 @@
                                         @else —
                                         @endif
                                     </td>
-                                    <td class="text-right">{{ number_format($member->amount, 2) }}</td>
+                                    <td class="text-right">₹{{ number_format($member->amount ?? 0, 2) }}</td>
+
                                     @if($mi === 0)
-                                    <td rowspan="{{ $rowCount }}" style="white-space:nowrap;">{{ $reg->transaction_id ?? '—' }}</td>
+                                    <td rowspan="{{ $rowCount }}" style="white-space:nowrap;">
+                                        {{ $reg->transaction_id ?? '—' }}
+                                    </td>
                                     <td rowspan="{{ $rowCount }}" class="text-right font-weight-bold" style="color:#251c4b;">
                                         ₹{{ number_format($reg->grand_total, 2) }}
                                     </td>
@@ -351,18 +366,16 @@
                             @endif
                         @empty
                             <tr>
-                                <td colspan="12" class="text-center text-muted py-4">No registrations found.</td>
+                                <td colspan="13" class="text-center text-muted py-4">No registrations found.</td>
                             </tr>
                         @endforelse
                     </tbody>
                     <tfoot style="background:#f8f9fa;">
                         <tr>
-                            <td colspan="9" class="text-right font-weight-bold" style="font-size:.82rem;">
+                            <td colspan="10" class="text-right font-weight-bold" style="font-size:.82rem;">
                                 Total Members: <strong>{{ $stats['totalMembers'] }}</strong>
                             </td>
-                            <td class="text-right font-weight-bold" style="color:#1a7a4a;">
-                                —
-                            </td>
+                            <td class="text-right font-weight-bold" style="color:#1a7a4a;">—</td>
                             <td class="text-right font-weight-bold" style="font-size:.82rem;">Grand Total:</td>
                             <td class="text-right font-weight-bold" style="color:#1a7a4a;font-size:.95rem;">
                                 ₹{{ number_format($stats['totalAmount'], 2) }}
@@ -371,20 +384,28 @@
                     </tfoot>
                 </table>
             </div>
-            @endif
         </div>
 
         {{-- ═══════════════════════════════════════════════════════════
-             SECTION 3 — Awards Table
+             SECTION 3 — Awards Table (loop ALL awards per registration)
         ═══════════════════════════════════════════════════════════ --}}
-        @php $awardRegs = $registrations->filter(fn($r) => $r->award); @endphp
-        @if($awardRegs->count())
+        @php
+            // Collect ALL individual award rows across all registrations
+            $allAwards = $registrations->flatMap(function($reg) {
+                return $reg->awards->map(function($a) use ($reg) {
+                    $a->_reg = $reg; // attach parent reg for display
+                    return $a;
+                });
+            });
+        @endphp
+
+        @if($allAwards->count())
         <div class="card mb-3 shadow-sm">
             <div class="section-header">
                 <span class="section-number">3</span>
                 <h6 class="section-title">Awards &amp; Certificates</h6>
                 <span class="ml-auto badge badge-warning badge-pill">
-                    {{ $awardRegs->count() }} Awards
+                    {{ $allAwards->count() }} {{ $allAwards->count() === 1 ? 'Award' : 'Awards' }}
                 </span>
             </div>
             <div class="table-responsive">
@@ -392,31 +413,41 @@
                     <thead style="background:#fffbf0;">
                         <tr>
                             <th>#</th>
-                            <th>Company</th>
+                            <th>Company / PA Member</th>
+                            <th>Surname</th>
                             <th>Member Name</th>
-                            <th>Award Certificate</th>
-                            <th>Type</th>
+                            <th>Gender</th>
+                            <th>Department</th>
+                            <th>Award Category</th>
+                            <th>Award Type</th>
                             <th>Food</th>
-                            <th>Relation</th>
                             <th class="text-right">Amount (₹)</th>
-                            <th>Description</th>
+                            <th>Special Comment</th>
+                            <th>Photo</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($awardRegs as $i => $reg)
-                        @php $a = $reg->award; @endphp
+                        @foreach($allAwards as $i => $a)
+                        @php $reg = $a->_reg; @endphp
                         <tr>
                             <td>{{ $i + 1 }}</td>
                             <td>
                                 <div class="reg-company">{{ $reg->company_name ?? '—' }}</div>
-                                <div class="reg-meta">{{ trim(($reg->first_name ?? '') . ' ' . ($reg->last_name ?? '')) }}</div>
+                                <div class="reg-meta">
+                                    {{ trim(($reg->user?->first_name ?? '') . ' ' . ($reg->user?->last_name ?? '')) ?: '—' }}
+                                </div>
                             </td>
+                            {{-- Award fields — matched to awards table columns --}}
+                            <td>{{ $a->surname ?? '—' }}</td>
+                            <td>{{ $a->first_name ?? '—' }}</td>
                             <td>
-                                {{ trim(($a->first_name ?? '') . ' ' . ($a->last_name ?? '')) ?: '—' }}
+                                @if($a->gender)
+                                    <span class="badge badge-light">{{ ucfirst($a->gender) }}</span>
+                                @else —
+                                @endif
                             </td>
-                            <td>
-                                {{ $a->award_name === 'Other' ? ($a->other_award_name ?? 'Other') : ($a->award_name ?? '—') }}
-                            </td>
+                            <td>{{ $a->department ?? '—' }}</td>
+                            <td>{{ $a->award_category ?? '—' }}</td>
                             <td>
                                 @if($a->award_type)
                                     <span class="badge-award">{{ ucfirst($a->award_type) }}</span>
@@ -429,25 +460,56 @@
                                 @else —
                                 @endif
                             </td>
-                            <td>{{ $a->relation?->name ?? '—' }}</td>
                             <td class="text-right font-weight-bold">
-                                ₹{{ number_format($a->amount_section3 ?? 0, 2) }}
+                                ₹{{ number_format($a->amount ?? 0, 2) }}
                             </td>
-                            <td style="font-size:.78rem;max-width:200px;">
-                                {{ \Illuminate\Support\Str::limit($a->section3_description ?? '—', 80) }}
+                            <td style="font-size:.78rem;max-width:180px;">
+                                {{ \Illuminate\Support\Str::limit($a->special_comment ?? '—', 80) }}
+                            </td>
+                            @php
+                                $photoUrl = null;
+                                if (!empty($a->photo_attached)) {
+                                    if (\Illuminate\Support\Str::startsWith($a->photo_attached, ['http://', 'https://'])) {
+                                        // If URL is same host, normalize scheme to current request to avoid mixed-content blocks
+                                        $parsedHost = parse_url($a->photo_attached, PHP_URL_HOST);
+                                        $currentHost = request()->getHost();
+                                        if ($parsedHost && $parsedHost === $currentHost) {
+                                            $scheme = request()->getScheme();
+                                            $path = parse_url($a->photo_attached, PHP_URL_PATH) ?: '';
+                                            $query = parse_url($a->photo_attached, PHP_URL_QUERY);
+                                            $photoUrl = $scheme . '://' . $parsedHost . $path . ($query ? ('?' . $query) : '');
+                                        } else {
+                                            $photoUrl = $a->photo_attached;
+                                        }
+                                    } elseif (\Illuminate\Support\Facades\Storage::disk('public')->exists(ltrim($a->photo_attached, '/'))) {
+                                        $photoUrl = \Illuminate\Support\Facades\Storage::url(ltrim($a->photo_attached, '/'));
+                                    } else {
+                                        $photoUrl = asset('storage/' . ltrim($a->photo_attached, '/'));
+                                    }
+                                }
+                            @endphp
+                            <td class="text-center">
+                                @if($photoUrl)
+                                    <a href="{{ $photoUrl }}" target="_blank" rel="noopener noreferrer">
+                                        <i class="mdi mdi-image text-success"></i> View
+                                    </a>
+                                @else
+                                    <span class="text-muted">—</span>
+                                @endif
                             </td>
                         </tr>
                         @endforeach
                     </tbody>
                     <tfoot style="background:#fffbf0;">
                         <tr>
-                            <td colspan="7" class="text-right font-weight-bold" style="font-size:.82rem;">
-                                Total Awards: <strong>{{ $awardRegs->count() }}</strong>
+                            <td colspan="9" class="text-right font-weight-bold" style="font-size:.82rem;">
+                                Total Awards: <strong>{{ $allAwards->count() }}</strong>
                             </td>
                             <td class="text-right font-weight-bold" style="color:#856404;">
-                                ₹{{ number_format($awardRegs->sum(fn($r) => $r->award->amount_section3 ?? 0), 2) }}
+                                {{-- Use 'amount' column (correct field) --}}
+                                ₹{{ number_format($allAwards->sum(fn($a) => $a->amount ?? 0), 2) }}
                             </td>
-                            <td></td>
+                            <td colspan="2"></td>
                         </tr>
                     </tfoot>
                 </table>
@@ -456,7 +518,7 @@
         @endif
 
         @else
-        {{-- No registrations yet --}}
+        {{-- No registrations --}}
         <div class="card shadow-sm">
             <div class="no-data" style="padding:4rem;">
                 <i class="mdi mdi-calendar-search" style="font-size:3rem;color:#dee2e6;display:block;margin-bottom:.75rem;"></i>

@@ -3,11 +3,7 @@
 
 @section('content')
 
-{{-- ══════════════════════════════════════════════════════════════════════
-     Inline styles — only tiny overrides that Bootstrap/theme don't cover
-═══════════════════════════════════════════════════════════════════════ --}}
 <style>
-    /* Section header stripe */
     .section-header {
         display: flex;
         align-items: center;
@@ -21,8 +17,7 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 26px;
-        height: 26px;
+        width: 26px; height: 26px;
         border-radius: 50%;
         background: #251c4b;
         color: #fff;
@@ -36,12 +31,9 @@
         color: #251c4b;
         margin: 0;
     }
-    .section-badge {
-        margin-left: auto;
-    }
+    .section-badge { margin-left: auto; }
 
-    /* Member block */
-    .member-block {
+    .member-block, .award-block {
         border: 1px solid #dee2e6;
         border-left: 3px solid #251c4b;
         border-radius: .25rem;
@@ -50,10 +42,11 @@
         background: #fdfdff;
         transition: box-shadow .15s;
     }
-    .member-block:hover {
+    .award-block { border-left-color: #e6a817; }
+    .member-block:hover, .award-block:hover {
         box-shadow: 0 2px 8px rgba(37,28,75,.1);
     }
-    .member-block-header {
+    .block-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -61,82 +54,54 @@
         padding-bottom: .6rem;
         border-bottom: 1px solid #eee;
     }
-    .member-label {
+    .block-label {
         font-size: .75rem;
         font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: .06em;
-        color: #251c4b;
     }
-
-    /* Add member button */
-    /* #add_member {
-        width: 100%;
-        border: 2px dashed #b8b4cc;
-        background: transparent;
-        color: #251c4b;
-        border-radius: .25rem;
-        padding: .6rem;
-        font-size: .875rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all .2s;
-        margin-top: .25rem;
-        font-family: "Roboto", sans-serif;
-    }
-    #add_member:hover {
-        background: #251c4b;
-        border-color: #251c4b;
-        color: #fff;
-    } */
-
-    /* Grand Total box */
-    .grand-total-box {
-        background: #251c4b;
-        border-radius: .35rem;
-        padding: .9rem 1.2rem;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 1.25rem;
-        color: #fff;
-    }
-    .grand-total-label {
-        font-size: .78rem;
-        text-transform: uppercase;
-        letter-spacing: .06em;
-        opacity: .75;
-        font-weight: 600;
-    }
-    .grand-total-value {
-        font-size: 1.5rem;
-        font-weight: 700;
-        letter-spacing: .02em;
-    }
-
-    /* Preview images */
-    .img-thumb {
-        display: none;
-        max-height: 100px;
-        margin-top: .5rem;
-        border-radius: .25rem;
-        border: 1px solid #dee2e6;
-    }
-
-    /* form-label bold */
     .form-label {
         font-weight: 500;
         font-size: .82rem;
         color: #495057;
         margin-bottom: .3rem;
     }
+    .btn-add-row {
+        background: #251c4b;
+        color: #fff;
+        border: none;
+        font-size: .8rem;
+        padding: .35rem .85rem;
+        border-radius: .2rem;
+    }
+    .btn-add-row:hover { background: #3b2d74; color: #fff; }
+    .btn-remove-row {
+        background: transparent;
+        border: 1px solid #dc3545;
+        color: #dc3545;
+        font-size: .75rem;
+        padding: .25rem .6rem;
+        border-radius: .2rem;
+        cursor: pointer;
+    }
+    .btn-remove-row:hover { background: #dc3545; color: #fff; }
+    .grand-total-box {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        background: linear-gradient(135deg,#251c4b,#3b2d74);
+        color: #fff;
+        border-radius: .35rem;
+        padding: .85rem 1.25rem;
+        margin-bottom: 1rem;
+    }
+    .grand-total-label { font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; opacity: .8; }
+    .grand-total-value { margin-left: auto; font-size: 1.6rem; font-weight: 700; }
 </style>
 
 <div class="row justify-content-center">
     <div class="col-12 col-md-10 col-lg-8 d-flex">
         <div class="card w-100">
 
-            {{-- ── Card header ── --}}
+            {{-- Card Header --}}
             <div class="card-header d-flex align-items-center justify-content-between"
                  style="background:#251c4b; border-radius:.25rem .25rem 0 0;">
                 <h4 class="card-title text-white mb-0">
@@ -151,7 +116,7 @@
 
             <div class="card-body">
 
-                {{-- ── Event Banner ── --}}
+                {{-- Event Banner --}}
                 @if(isset($event) && $event)
                 <div class="alert alert-info d-flex justify-content-between align-items-center mb-4" role="alert">
                     <div>
@@ -171,9 +136,9 @@
                     <input type="hidden" name="event_id" value="{{ $event->id ?? '' }}">
                     @csrf
 
-                    {{-- ══════════════════════════════════════════════
+                    {{-- ══════════════════════════════════════
                          SECTION 1 — Personal / Company
-                    ══════════════════════════════════════════════ --}}
+                    ══════════════════════════════════════ --}}
                     <div class="card mb-2 shadow-sm">
                         <div class="section-header">
                             <span class="section-number">1</span>
@@ -187,56 +152,47 @@
                             <div class="row">
                                 <div class="col-md-3">
                                     <div class="form-group m-0">
-                                        <label class="form-label" for="first_name">
-                                            First Name <span class="text-danger">*</span>
-                                        </label>
-                                        <input type="text" class="form-control" id="first_name"
-                                               name="first_name"
+                                        <label class="form-label">First Name <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" name="first_name"
                                                value="{{ old('first_name', auth()->user()->first_name ?? '') }}"
                                                placeholder="First name" required>
                                     </div>
                                 </div>
                                 <div class="col-md-3">
                                     <div class="form-group m-0">
-                                        <label class="form-label" for="last_name">Last Name</label>
-                                        <input type="text" class="form-control" id="last_name"
-                                               name="last_name"
+                                        <label class="form-label">Last Name</label>
+                                        <input type="text" class="form-control" name="last_name"
                                                value="{{ old('last_name', auth()->user()->last_name ?? '') }}"
                                                placeholder="Last name">
                                     </div>
                                 </div>
                                 <div class="col-md-3">
                                     <div class="form-group m-0">
-                                        <label class="form-label" for="mobile">Mobile Number</label>
-                                        <input type="tel" class="form-control" id="mobile"
-                                               name="mobile"
+                                        <label class="form-label">Mobile Number</label>
+                                        <input type="tel" class="form-control" name="mobile"
                                                value="{{ old('mobile', auth()->user()->mobile ?? '') }}"
                                                placeholder="+91 00000 00000">
                                     </div>
                                 </div>
-								<div class="col-md-3">
+                                <div class="col-md-3">
                                     <div class="form-group m-0">
-                                        <label class="form-label" for="email">Email Address</label>
-                                        <input type="email" class="form-control" id="email"
-                                               name="email"
+                                        <label class="form-label">Email Address</label>
+                                        <input type="email" class="form-control" name="email"
                                                value="{{ old('email', auth()->user()->email ?? '') }}"
                                                placeholder="you@example.com">
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="row">
+                            <div class="row mt-2">
                                 <div class="col-md-3">
                                     <div class="form-group m-0">
-                                        <label class="form-label" for="chapter_id">
-                                            Chapter Name <span class="text-danger">*</span>
-                                        </label>
-                                        <select id="chapter_id" name="chapter_id" class="form-control" required>
+                                        <label class="form-label">Chapter Name <span class="text-danger">*</span></label>
+                                        <select name="chapter_id" class="form-control" required>
                                             <option value="">— Select Chapter —</option>
                                             @if(isset($chapters))
                                                 @foreach($chapters as $c)
-                                                    <option value="{{ $c->id }}"
-                                                        {{ old('chapter_id') == $c->id ? 'selected' : '' }}>
+                                                    <option value="{{ $c->id }}" {{ old('chapter_id') == $c->id ? 'selected' : '' }}>
                                                         {{ $c->name }}
                                                     </option>
                                                 @endforeach
@@ -244,51 +200,47 @@
                                         </select>
                                     </div>
                                 </div>
-								<div class="col-md-3">
+                                <div class="col-md-3">
                                     <div class="form-group m-0">
-                                        <label class="form-label" for="chain_name">GA-Chain Name<span class="text-danger">*</span></label>
-                                             <input type="text" class="form-control" id="chain_name"
-                                                 name="chain_name" value="{{ old('chain_name') }}"
-                                                 placeholder="Chain name" required>
+                                        <label class="form-label">GA-Chain Name <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" name="chain_name"
+                                               value="{{ old('chain_name') }}" placeholder="Chain name" required>
                                     </div>
                                 </div>
                             </div>
+
                             <hr class="my-2">
+
                             <div class="row">
-                                
                                 <div class="col-md-3">
                                     <div class="form-group m-0">
-                                        <label class="form-label" for="company_name">Company Name<span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control" id="company_name"
-                                               name="company_name" value="{{ old('company_name') }}"
-                                               placeholder="ABC Pvt. Ltd." required>
+                                        <label class="form-label">Company Name <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" name="company_name"
+                                               value="{{ old('company_name') }}" placeholder="ABC Pvt. Ltd." required>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-								 <div class="form-group m-0">
-                                	<label class="form-label" for="about_company">About Company</label>
-                                	<textarea class="form-control" id="about_company"
-                                          name="about_company" rows="2"
-                                          placeholder="Brief description of the company…">{{ old('about_company') }}</textarea>
-                            	</div>
-								</div>
-                                <div class="col-md-3">
                                     <div class="form-group m-0">
-                                        <label class="form-label" for="company_logo">Company Logo<span class="text-danger">*</span></label>
-                                        <input type="file" class="form-control-file" id="company_logo"
-                                               name="company_logo" accept="image/*" required>
-                                        <img id="company_logo_preview" class="img-thumb img-fluid" src="#" alt="Logo">
+                                        <label class="form-label">About Company</label>
+                                        <textarea class="form-control" name="about_company" rows="2"
+                                                  placeholder="Brief description of the company…">{{ old('about_company') }}</textarea>
                                     </div>
                                 </div>
-								
+                                <div class="col-md-3">
+                                    <div class="form-group m-0">
+                                        <label class="form-label">Company Logo <span class="text-danger">*</span></label>
+                                        <input type="file" class="form-control-file" name="company_logo" accept="image/*" required>
+                                        <img id="company_logo_preview" class="img-thumb img-fluid mt-1" src="#" alt="Logo" style="display:none;max-height:60px;">
+                                    </div>
+                                </div>
                             </div>
 
                         </div>
                     </div>
 
-                    {{-- ══════════════════════════════════════════════
+                    {{-- ══════════════════════════════════════
                          SECTION 2 — Member Details (Dynamic)
-                    ══════════════════════════════════════════════ --}}
+                    ══════════════════════════════════════ --}}
                     <div class="card mb-2 shadow-sm">
                         <div class="section-header">
                             <span class="section-number">2</span>
@@ -299,287 +251,109 @@
                         </div>
                         <div class="card-body">
 
-                            <div class="form-group m-0">
-                                <label class="form-label" for="section_description">Section Description</label>
-                                <textarea class="form-control" id="section_description"
-                                          name="section_description" rows="2"
+                            <div class="form-group mb-2">
+                                <label class="form-label">Section Description</label>
+                                <textarea class="form-control" name="section_description" rows="2"
                                           placeholder="Optional notes for this section…">{{ old('section_description') }}</textarea>
                             </div>
 
-                            {{-- Dynamic member rows --}}
-                            @php $memberCount = max(1, count(old('member_name', []))); @endphp
+                            <div id="members_container"></div>
 
-                            <div id="members_container">
-                                @for ($i = 0; $i < $memberCount; $i++)
-                                <div class="member-block" data-index="{{ $i }}">
-                                    <div class="member-block-header">
-                                        <span class="member-label">
-                                            <i class="mdi mdi-account mr-1"></i> Member #{{ $i + 1 }}
-                                        </span>
-                                        <button type="button" class="btn btn-sm btn-outline-danger remove-member">
-                                            <i class="mdi mdi-close"></i> Remove
-                                        </button>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-2">
-                                            <div class="form-group m-0">
-                                                <label class="form-label">Surname</label>
-                                                <input type="text" class="form-control" name="member_surname[{{ $i }}]"
-                                                       value="{{ old('member_surname.'.$i) }}" placeholder="Surname">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-2">
-                                            <div class="form-group m-0">
-                                                <label class="form-label">Name</label>
-                                                <input type="text" class="form-control" name="member_name[{{ $i }}]"
-                                                       value="{{ old('member_name.'.$i) }}" placeholder="Full name">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-2">
-                                            <div class="form-group m-0">
-                                                <label class="form-label">Mobile Number</label>
-                                                <input type="tel" class="form-control" name="member_mobile[{{ $i }}]"
-                                                       value="{{ old('member_mobile.'.$i) }}" placeholder="Mobile">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-2">
-                                            <div class="form-group m-0">
-                                                <label class="form-label">Relation</label>
-                                                <select name="relation_id[{{ $i }}]" class="form-control">
-                                                    <option value="">— Select Relation —</option>
-                                                    @if(isset($relations))
-                                                        @foreach($relations as $r)
-                                                            <option value="{{ $r->id }}"
-                                                                {{ old('relation_id.'.$i) == $r->id ? 'selected' : '' }}>
-                                                                {{ $r->name }}
-                                                            </option>
-                                                        @endforeach
-                                                    @endif
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-2">
-                                            <div class="form-group m-0">
-                                                <label class="form-label">Date of Birth</label>
-                                                <input type="date" class="form-control dob-field"
-                                                       name="dob[{{ $i }}]" value="{{ old('dob.'.$i) }}">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-1">
-                                            <div class="form-group m-0">
-                                                <label class="form-label">Age</label>
-                                                <input type="number" class="form-control age-field"
-                                                       name="age[{{ $i }}]" value="{{ old('age.'.$i) }}" placeholder="—" min="0" max="120">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-1">
-                                            <div class="form-group m-0">
-                                                <label class="form-label">Food</label>
-                                                <select name="food_id[{{ $i }}]" class="form-control food-field">
-                                                    <option value="">Select Food</option>
-                                                    @if(isset($foods))
-                                                        @foreach($foods as $f)
-                                                            <option value="{{ $f->id }}"
-                                                                data-amount="{{ $f->amount ?? 0 }}"
-                                                                {{ old('food_id.'.$i) == $f->id ? 'selected' : '' }}>
-                                                                {{ $f->name }}
-                                                            </option>
-                                                        @endforeach
-                                                    @endif
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-2">
-                                            <div class="form-group m-0">
-                                                <label class="form-label">Amount (₹)</label>
-                                                <input type="text" readonly class="form-control amount-field"
-                                                       name="amount[{{ $i }}]" value="{{ old('amount.'.$i) }}" placeholder="0">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                @endfor
-                            </div>
-
-                            {{-- Add Member Button --}}
-                            <button type="button" id="add_member">
-                                <i class="mdi mdi-plus-circle mr-1"></i> Add Another Member
+                            <button type="button" class="btn btn-add-row" id="add_member_btn">
+                                <i class="mdi mdi-plus-circle mr-1"></i> Add Member
                             </button>
 
                         </div>
                     </div>
 
-                    {{-- ══════════════════════════════════════════════
-                         SECTION 3 — Awards & Member Details
-                    ══════════════════════════════════════════════ --}}
+                    {{-- ══════════════════════════════════════
+                         SECTION 3 — Awards & Member Details (Dynamic)
+                    ══════════════════════════════════════ --}}
                     <div class="card mb-2 shadow-sm">
                         <div class="section-header">
                             <span class="section-number">3</span>
                             <h6 class="section-title">Awards &amp; Member Details</h6>
                             <span class="section-badge">
-                                <span class="badge badge-warning badge-pill">Certificates</span>
+                                <span class="badge badge-warning badge-pill" id="award_count_badge">1 Award</span>
                             </span>
                         </div>
                         <div class="card-body">
 
                             <div class="form-group mb-2">
-                                <label class="form-label" for="section3_description">Section Description</label>
-                                <textarea class="form-control" id="section3_description"
-                                          name="section3_description" rows="2"
+                                <label class="form-label">Section Description</label>
+                                <textarea class="form-control" name="section3_description" rows="2"
                                           placeholder="Optional notes…">{{ old('section3_description') }}</textarea>
                             </div>
 
-                            <div class="row">
-                                <div class="col-md-2">
-                                    <div class="form-group m-0">
-                                        <label class="form-label" for="member_first_name">Member's Surname</label>
-                                        <input type="text" class="form-control" id="member_first_name"
-                                               name="member_first_name" value="{{ old('member_first_name') }}"
-                                               placeholder="First name">
-                                    </div>
-                                </div>
-                                <div class="col-md-2">
-                                    <div class="form-group m-0">
-                                        <label class="form-label" for="member_last_name">Member's Name</label>
-                                        <input type="text" class="form-control" id="member_last_name"
-                                               name="member_last_name" value="{{ old('member_last_name') }}"
-                                               placeholder="Last name">
-                                    </div>
-                                </div>
-                                <div class="col-md-2">
-                                    <div class="form-group m-0">
-                                        <label class="form-label" for="relation_id_section3">Gender</label>
-                                         <select id="gender" name="gender" class="form-control">
-                                            <option value="">— Select Option —</option>
-                                            <option value="male" {{ old('gender') == 'male' ? 'selected' : '' }}>Male</option>
-                                            <option value="female" {{ old('gender') == 'female' ? 'selected' : '' }}>Female</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                
-                                <div class="col-md-2">
-                                    <div class="form-group m-0">
-                                        <label class="form-label" for="relation_id_section3">Department</label>
-                                         <input type="text" class="form-control" id="department"
-                                               name="award_department" value="{{ old('award_department') }}"
-                                               placeholder="Award Department">
-                                    </div>
-                                    </div>
-                                
-                                <div class="col-md-2">
-                                    <div class="form-group m-0">
-                                        <label class="form-label" for="award_category">Award Category</label>
-                                       <input type="text" class="form-control" id="award_category"
-                                               name="award_category" value="{{ old('award_category') }}"
-                                               placeholder="Award Category">
-                                    </div>
-                                </div>
-								<div class="col-md-2">
-                                    <div class="form-group m-0">
-                                        <label class="form-label" for="award_type">Award Type</label>
-                                        <select id="award_type" name="award_type" class="form-control">
-                                            <option value="">— Select Option —</option>
-                                            <option value="certificate" {{ old('award_type') == 'certificate' ? 'selected' : '' }}>Certificate</option>
-                                            <option value="award" {{ old('award_type') == 'award' ? 'selected' : '' }}>Award</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-md-2">
-                                    <div class="form-group m-0">
-                                        <label class="form-label" for="food_id_section3">Food </label>
-                                        <select id="food_id_section3" name="food_id_section3" class="form-control">
-                                            <option value="">— Select Food —</option>
-                                            @if(isset($foods))
-                                                @foreach($foods as $f)
-                                                    <option value="{{ $f->id }}"
-                                                        data-amount="{{ $f->amount ?? 0 }}"
-                                                        {{ old('food_id_section3') == $f->id ? 'selected' : '' }}>
-                                                        {{ $f->name }}
-                                                    </option>
-                                                @endforeach
-                                            @endif
-                                        </select>
-                                    </div>
-                                </div>
-                                
-                                <div class="col-md-2 mt-2">
-                                    <div class="form-group m-0">
-                                        <label class="form-label" for="amount_section3">Amount (₹)</label>
-                                        <input type="text" readonly class="form-control"
-                                               id="amount_section3" name="amount_section3"
-                                               value="{{ old('amount_section3') }}" placeholder="0">
-                                    </div>
-                                </div>
-                                <div class="col-md-2 mt-2">
-                                    <div class="form-group m-0 mb-0">
-                                        <label class="form-label" for="photo_attached">Photo Attached
-                                            <i class="mdi mdi-information-outline ml-1 text-muted" data-toggle="tooltip" title="Attach member photo (optional). Max 2MB."></i>
-                                        </label>
-                                        <input type="file" class="form-control-file" id="photo_attached"
-                                               name="photo_attached" accept="image/*">
-                                    </div>
-                                </div>
-                            </div>
+                            <div id="awards_container"></div>
 
-                            <!-- Repeatable awards container -->
-                            <div id="awards_container" class="mb-3">
-                                <!-- Existing (primary) award fields stay as-is and submit as single set -->
-                            </div>
+                            <button type="button" class="btn btn-add-row" id="add_award_btn"
+                                    style="background:#e6a817; border-color:#e6a817;">
+                                <i class="mdi mdi-plus-circle mr-1"></i> Add Award
+                            </button>
 
-                            <div class="text-right mb-3">
-                                <button type="button" id="add_award" class="btn btn-sm btn-outline-primary">+ Add Award</button>
-                            </div>
-
-                            <hr class="my-3">
-                            <div class="form-group m-0">
-                                <label class="form-label" for="special_comment">Special Comment for Member</label>
-                                <textarea class="form-control" id="special_comment"
-                                          name="special_comment" rows="2"
-                                          placeholder="Recognition note, achievements, etc.">{{ old('special_comment') }}</textarea>
-                            </div>
                         </div>
                     </div>
 
-                    {{-- ══════════════════════════════════════════════
-                         SECTION 4 — Images & Payment
-                    ══════════════════════════════════════════════ --}}
+                    {{-- ══════════════════════════════════════
+                         PAYMENT & SUBMIT
+                    ══════════════════════════════════════ --}}
                     <div class="card mb-2 shadow-sm">
                         <div class="card-body">
-                            {{-- Grand Total --}}
+
                             <div class="grand-total-box">
                                 <div>
                                     <div class="grand-total-label">Grand Total</div>
-                                    <small style="opacity:.6;">Auto-calculated from all members</small>
+                                    <small style="opacity:.6;">Auto-calculated from all members + awards</small>
                                 </div>
-                                <div class="grand-total-value">
-                                    ₹ <span id="grand_total_display">0</span>
-                                </div>
+                                <div class="grand-total-value">₹ <span id="grand_total_display">0</span></div>
                                 <input type="hidden" id="grand_total" name="grand_total" value="{{ old('grand_total', 0) }}">
                             </div>
 
                             <div class="row">
                                 <div class="col-md-4">
                                     <div class="form-group m-0">
-                                        <label class="form-label" for="transaction_id">Transaction ID</label>
-                                        <input type="text" class="form-control" id="transaction_id"
-                                               name="transaction_id" value="{{ old('transaction_id') }}"
-                                               placeholder="TXN0000000000">
+                                        <label class="form-label">Transaction ID</label>
+                                        <input type="text" class="form-control" name="transaction_id"
+                                               value="{{ old('transaction_id') }}" placeholder="TXN0000000000">
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group m-0">
-                                        <label class="form-label" for="qr_code">QR Code (image)</label>
-                                        <input type="file" class="form-control-file" id="qr_code"
-                                               name="qr_code" accept="image/*">
-                                        <img id="qr_preview" class="img-thumb img-fluid" src="#" alt="QR">
+                                        <label class="form-label">
+                                            <i class="mdi mdi-qrcode mr-1"></i> Event QR Code
+                                        </label>
+                                        @if(isset($qr_image_url) && $qr_image_url)
+                                            {{-- QR code auto-fetched from the selected Event --}}
+                                            <div class="mt-1 p-2 border rounded text-center" style="background:#f8f9fa;max-width:150px;">
+                                                <img src="{{ $qr_image_url }}"
+                                                     alt="Event QR Code"
+                                                     class="img-fluid"
+                                                     style="max-height:120px;max-width:120px;">
+                                                <div class="small text-muted mt-1">
+                                                    <i class="mdi mdi-check-circle text-success"></i> Event QR Code
+                                                </div>
+                                            </div>
+                                            <input type="hidden" name="qr_code_existing" value="{{ $qr_image_url }}">
+                                        @else
+                                            <div class="mt-1 p-3 border rounded text-center text-muted" style="background:#f8f9fa;max-width:150px;">
+                                                <i class="mdi mdi-qrcode-scan" style="font-size:2rem;opacity:.3;display:block;"></i>
+                                                <small>No QR Code<br>
+                                                @if(isset($event) && $event)
+                                                    — not set on this event
+                                                @else
+                                                    — select an event
+                                                @endif
+                                                </small>
+                                            </div>
+                                        @endif
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group m-0">
-                                        <label class="form-label" for="screenshot_payment">Payment Screenshot</label>
-                                        <input type="file" class="form-control-file" id="screenshot_payment"
-                                               name="screenshot_payment" accept="image/*">
-                                        <img id="screenshot_preview" class="img-thumb img-fluid" src="#" alt="Screenshot">
+                                        <label class="form-label">Payment Screenshot</label>
+                                        <input type="file" class="form-control-file" name="screenshot_payment" accept="image/*">
+                                        <img id="screenshot_preview" class="img-fluid mt-1" src="#" alt="Screenshot" style="display:none;max-height:80px;">
                                     </div>
                                 </div>
                             </div>
@@ -602,433 +376,368 @@
     </div>
 </div>
 
-{{-- ══ Hidden award template — outside form so it is never submitted ══ --}}
-<div id="award_template" style="display:none;" aria-hidden="true">
-    <div class="award-block mb-3" data-idx="__IDX__">
-        <div class="d-flex align-items-center mb-2">
-            <strong class="mr-2">Award #<span class="award-num">__NUM__</span></strong>
-            <button type="button" class="btn btn-sm btn-outline-danger ml-auto remove-award">-</button>
-        </div>
-        <div class="form-row">
-            <div class="form-group col-md-4">
-                <label class="form-label">Award Name</label>
-                <input name="award_name_extra[]" class="form-control">
-            </div>
-            <div class="form-group col-md-2">
-                <label class="form-label">Type</label>
-                <select name="award_type_extra[]" class="form-control award-type-extra">
-                    <option value="">Select</option>
-                    <option value="certificate">Certificate</option>
-                    <option value="award">Award</option>
-                </select>
-            </div>
-            <div class="form-group col-md-2">
-                <label class="form-label">Amount</label>
-                <input name="amount_section3_extra[]" class="form-control amount-section3-extra" readonly value="0">
-            </div>
-            <div class="form-group col-md-4">
-                <label class="form-label">Food</label>
-                <select name="food_id_section3_extra[]" class="form-control food-section3-extra">
-                    <option value="">— Select Food —</option>
-                    @if(isset($foods))
-                        @foreach($foods as $f)
-                            <option value="{{ $f->id }}" data-amount="{{ $f->amount ?? 0 }}">{{ $f->name }}</option>
-                        @endforeach
-                    @endif
-                </select>
-            </div>
-        </div>
-    </div>
-</div>
-
-{{-- ══ Hidden member template — rendered by Blade, cloned by JS ══ --}}
-<div id="member_template" style="display:none;" aria-hidden="true">
-    <div class="member-block" data-index="__IDX__">
-        <div class="member-block-header">
-            <span class="member-label"><i class="mdi mdi-account mr-1"></i> Member #<span class="member-num">1</span></span>
-            <button type="button" class="btn btn-sm btn-outline-danger remove-member">
-                <i class="mdi mdi-close"></i> Remove
-            </button>
-        </div>
-        <div class="row">
-            <div class="col-md-2">
-                <div class="form-group m-0">
-                    <label class="form-label">Surname</label>
-                    <input type="text" class="form-control" name="member_surname[__IDX__]" placeholder="Surname">
-                </div>
-            </div>
-            <div class="col-md-2">
-                <div class="form-group m-0">
-                    <label class="form-label">Name</label>
-                    <input type="text" class="form-control" name="member_name[__IDX__]" placeholder="Full name">
-                </div>
-            </div>
-            <div class="col-md-2">
-                <div class="form-group m-0">
-                    <label class="form-label">Mobile Number</label>
-                    <input type="tel" class="form-control" name="member_mobile[__IDX__]" placeholder="Mobile">
-                </div>
-            </div>
-            <div class="col-md-2">
-                <div class="form-group m-0">
-                    <label class="form-label">Relation</label>
-                    <select name="relation_id[__IDX__]" class="form-control">
-                        <option value="">— Select Relation —</option>
-                        @if(isset($relations))
-                            @foreach($relations as $r)
-                                <option value="{{ $r->id }}">{{ $r->name }}</option>
-                            @endforeach
-                        @endif
-                    </select>
-                </div>
-            </div>
-            <div class="col-md-2">
-                <div class="form-group m-0">
-                    <label class="form-label">Date of Birth</label>
-                    <input type="date" class="form-control dob-field" name="dob[__IDX__]">
-                </div>
-            </div>
-            <div class="col-md-1">
-                <div class="form-group m-0">
-                    <label class="form-label">Age</label>
-                    <input type="number" class="form-control age-field" name="age[__IDX__]" placeholder="—" min="0" max="120">
-                </div>
-            </div>
-            <div class="col-md-1">
-                <div class="form-group m-0">
-                    <label class="form-label">Food</label>
-                    <select name="food_id[__IDX__]" class="form-control food-field">
-                        <option value="">Select Food</option>
-                        @if(isset($foods))
-                            @foreach($foods as $f)
-                                <option value="{{ $f->id }}" data-amount="{{ $f->amount ?? 0 }}">{{ $f->name }}</option>
-                            @endforeach
-                        @endif
-                    </select>
-                </div>
-            </div>
-            <div class="col-md-2">
-                <div class="form-group m-0">
-                    <label class="form-label">Amount (₹)</label>
-                    <input type="text" readonly class="form-control amount-field" name="amount[__IDX__]" placeholder="0">
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-@push('scripts')
+{{-- ════════════════════════════════════════════════════
+     JavaScript — Dynamic rows + total calculation
+════════════════════════════════════════════════════ --}}
 <script>
 (function () {
-    'use strict';
+    // ── Blade-injected PHP data ──────────────────────────────────────
+    var foodOptions = @json($foods ?? []);
+    var relationOptions = @json($relations ?? []);
 
-    /* ══ AWARD TYPE AMOUNTS — align with server calcAwardAmount() ═════ */
-    var AWARD_AMOUNTS = { certificate: 500, award: 1000 };
-
-    /* ── 1. Image preview ─────────────────────────────────────────── */
-    function bindPreview(inputId, previewId) {
-        var el = document.getElementById(inputId);
-        if (!el) return;
-        el.addEventListener('change', function () {
-            var img = document.getElementById(previewId);
-            if (!img) return;
-            if (this.files && this.files[0]) {
-                var reader = new FileReader();
-                reader.onload = function (e) { img.src = e.target.result; img.style.display = 'block'; };
-                reader.readAsDataURL(this.files[0]);
-            } else {
-                img.src = '#'; img.style.display = 'none';
-            }
+    // ── Helpers ─────────────────────────────────────────────────────
+    function buildFoodOptions(selectedId) {
+        var html = '<option value="">Select Food</option>';
+        foodOptions.forEach(function (f) {
+            var sel = (selectedId && String(f.id) === String(selectedId)) ? 'selected' : '';
+            html += '<option value="' + f.id + '" data-amount="' + (f.amount || 0) + '" ' + sel + '>' + f.name + '</option>';
         });
-    }
-    bindPreview('company_logo',       'company_logo_preview');
-    bindPreview('qr_code',            'qr_preview');
-    bindPreview('screenshot_payment', 'screenshot_preview');
-
-    /* ── 2. Calculate age from DOB ────────────────────────────────── */
-    function calcAge(dobValue) {
-        if (!dobValue) return null;
-        var d = new Date(dobValue);
-        if (isNaN(d.getTime())) return null;
-        var today = new Date();
-        var age = today.getFullYear() - d.getFullYear();
-        var m   = today.getMonth() - d.getMonth();
-        if (m < 0 || (m === 0 && today.getDate() < d.getDate())) age--;
-        return age >= 0 ? age : 0;
+        return html;
     }
 
-    /* ── 3. Amount from age ───────────────────────────────────────── */
-    function amountFromAge(age) {
-        if (age === null || age === undefined || age === '') return 0;
-        // Match server: age > 5 => 1000, else => 500
-        return (parseInt(age, 10) > 5) ? 1000 : 500;
+    function buildRelationOptions(selectedId) {
+        var html = '<option value="">— Select Relation —</option>';
+        relationOptions.forEach(function (r) {
+            var sel = (selectedId && String(r.id) === String(selectedId)) ? 'selected' : '';
+            html += '<option value="' + r.id + '" ' + sel + '>' + r.name + '</option>';
+        });
+        return html;
     }
 
-    /* ── 4. Grand total ───────────────────────────────────────────── */
+    // ── Amount Rules ────────────────────────────────────────────────
+    // Member  : relation_id == 1  → ₹0,   else → ₹600
+    // Award   : award_type == 'certificate' → ₹400,  else → ₹600
+
+    function calcMemberAmount(relationSelect) {
+        var val = relationSelect.value;
+        if (val === '') return 0;
+        return (val === '1') ? 0 : 600;
+    }
+
+    function calcAwardAmount(awardTypeSelect) {
+        var val = awardTypeSelect.value;
+        if (val === '') return 0;
+        return (val === 'certificate') ? 400 : 600;
+    }
+
     function recalcTotal() {
         var total = 0;
-        document.querySelectorAll('#members_container .amount-field').forEach(function (el) {
+        document.querySelectorAll('.amount-field').forEach(function (el) {
             total += parseFloat(el.value) || 0;
         });
-        var s3 = document.getElementById('amount_section3');
-        if (s3) total += parseFloat(s3.value) || 0;
-        // Add all extra award amounts
-        document.querySelectorAll('.amount-section3-extra').forEach(function (el) {
-            total += parseFloat(el.value) || 0;
-        });
-        document.getElementById('grand_total').value = total;
-        var disp = document.getElementById('grand_total_display');
-        if (disp) disp.textContent = total.toLocaleString('en-IN');
+        document.getElementById('grand_total_display').textContent = total.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        document.getElementById('grand_total').value = total.toFixed(2);
     }
 
-    /* ── 5. Member count badge ────────────────────────────────────── */
-    function updateBadge() {
-        var count = document.querySelectorAll('#members_container .member-block').length;
-        var badge = document.getElementById('member_count_badge');
-        if (badge) badge.textContent = count + (count === 1 ? ' Member' : ' Members');
+    // ════════════════════════════════════════════════════════════════
+    //  SECTION 2 — MEMBERS
+    // ════════════════════════════════════════════════════════════════
+    var memberIndex = 0;
+    var membersContainer = document.getElementById('members_container');
+    var memberBadge = document.getElementById('member_count_badge');
+
+    function updateMemberBadge() {
+        var count = membersContainer.querySelectorAll('.member-block').length;
+        memberBadge.textContent = count + (count === 1 ? ' Member' : ' Members');
     }
 
-    /* ── 6. Renumber labels + re-index names after remove ─────────── */
-    function renumber() {
-        document.querySelectorAll('#members_container .member-block').forEach(function (block, i) {
-            var lbl = block.querySelector('.member-label');
-            if (lbl) lbl.innerHTML = '<i class="mdi mdi-account mr-1"></i> Member #' + (i + 1);
-            block.setAttribute('data-index', i);
+    function reindexMembers() {
+        membersContainer.querySelectorAll('.member-block').forEach(function (block, i) {
+            block.dataset.index = i;
+            block.querySelector('.block-label').innerHTML = '<i class="mdi mdi-account mr-1"></i> Member #' + (i + 1);
             block.querySelectorAll('[name]').forEach(function (el) {
-                // Replace both numeric indexes [0], [1]... and template placeholder [__IDX__]
-                el.name = el.name.replace(/\[(__IDX__|\d+)\]/, '[' + i + ']');
+                el.name = el.name.replace(/\[\d+\]/, '[' + i + ']');
             });
         });
-        updateBadge();
+        updateMemberBadge();
     }
 
-    /* ── 7. Update single member amount ──────────────────────────── */
-    function updateMemberAmount(block) {
-        if (!block) return;
-        var ageField = block.querySelector('.age-field');
-        var amtField = block.querySelector('.amount-field');
-        if (!amtField) return;
-        // If a food is selected and provides an amount, prefer that.
-        var foodSel = block.querySelector('.food-field');
-        var foodAmount = null;
-        if (foodSel && foodSel.selectedOptions && foodSel.selectedOptions[0]) {
-            var parsedFood = parseFloat(foodSel.selectedOptions[0].dataset.amount);
-            if (!isNaN(parsedFood) && foodSel.selectedOptions[0].value !== '') {
-                foodAmount = parsedFood;
+    function buildMemberBlock(idx) {
+        var div = document.createElement('div');
+        div.className = 'member-block';
+        div.dataset.index = idx;
+        div.innerHTML = `
+            <div class="block-header">
+                <span class="block-label"><i class="mdi mdi-account mr-1"></i> Member #` + (idx + 1) + `</span>
+                <button type="button" class="btn-remove-row remove-member-btn" title="Remove Member">
+                    <i class="mdi mdi-trash-can-outline mr-1"></i> Remove
+                </button>
+            </div>
+            <div class="row">
+                <div class="col-md-2">
+                    <div class="form-group m-0">
+                        <label class="form-label">Surname</label>
+                        <input type="text" class="form-control" name="member_surname[` + idx + `]" placeholder="Surname">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-group m-0">
+                        <label class="form-label">Name</label>
+                        <input type="text" class="form-control" name="member_name[` + idx + `]" placeholder="Member's name">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-group m-0">
+                        <label class="form-label">Mobile Number</label>
+                        <input type="tel" class="form-control" name="member_mobile[` + idx + `]" placeholder="Mobile">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-group m-0">
+                        <label class="form-label">Relation</label>
+                        <select name="relation_id[` + idx + `]" class="form-control relation-field">
+                            ` + buildRelationOptions() + `
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-group m-0">
+                        <label class="form-label">Date of Birth</label>
+                        <input type="date" class="form-control dob-field" name="dob[` + idx + `]">
+                    </div>
+                </div>
+                <div class="col-md-1">
+                    <div class="form-group m-0">
+                        <label class="form-label">Age</label>
+                        <input type="number" class="form-control age-field" name="age[` + idx + `]" placeholder="—" min="0" max="120" readonly>
+                    </div>
+                </div>
+                <div class="col-md-1">
+                    <div class="form-group m-0">
+                        <label class="form-label">Food</label>
+                        <select name="food_id[` + idx + `]" class="form-control food-field">
+                            ` + buildFoodOptions() + `
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-2 mt-2">
+                    <div class="form-group m-0">
+                        <label class="form-label">Amount (₹)</label>
+                        <input type="text" readonly class="form-control amount-field member-amount-field" name="amount[` + idx + `]" placeholder="0">
+                    </div>
+                </div>
+            </div>`;
+
+        // DOB → Age auto-calc
+        var dobField = div.querySelector('.dob-field');
+        var ageField = div.querySelector('.age-field');
+        dobField.addEventListener('change', function () {
+            if (this.value) {
+                var today = new Date();
+                var birth = new Date(this.value);
+                var age = today.getFullYear() - birth.getFullYear();
+                var m = today.getMonth() - birth.getMonth();
+                if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+                ageField.value = age >= 0 ? age : '';
+            } else {
+                ageField.value = '';
             }
-        }
-        var age = (ageField && ageField.value !== '') ? parseInt(ageField.value, 10) : null;
-        if (foodAmount !== null) {
-            amtField.value = foodAmount;
-        } else {
-            amtField.value = (age !== null) ? amountFromAge(age) : 0;
-        }
-    }
+        });
 
-    /* ── 8b. Input event delegation (for live age typing) ────────── */
-    document.addEventListener('input', function (e) {
-        var t = e.target;
-        if (t.classList.contains('age-field')) {
-            updateMemberAmount(t.closest('.member-block'));
+        // Relation → Amount  (relation_id=1 → ₹0, else → ₹600)
+        div.querySelector('.relation-field').addEventListener('change', function () {
+            div.querySelector('.member-amount-field').value = calcMemberAmount(this);
             recalcTotal();
-        }
-    });
+        });
 
-    /* ── 8. Change event delegation ──────────────────────────────── */
-    document.addEventListener('change', function (e) {
-        var t = e.target;
-
-        if (t.classList.contains('dob-field')) {
-            var block    = t.closest('.member-block');
-            var ageField = block && block.querySelector('.age-field');
-            var age      = calcAge(t.value);
-            if (ageField) ageField.value = (age !== null) ? age : '';
-            updateMemberAmount(block);
-            recalcTotal();
-        }
-
-        if (t.classList.contains('food-field')) {
-            // When food selection changes, update member amount to food amount (if provided)
-            var block = t.closest('.member-block');
-            updateMemberAmount(block);
-            recalcTotal();
-        }
-
-        if (t.classList.contains('age-field')) {
-            updateMemberAmount(t.closest('.member-block'));
-            recalcTotal();
-        }
-
-        if (t.id === 'award_type') {
-            var el3 = document.getElementById('amount_section3');
-            if (el3) el3.value = AWARD_AMOUNTS[t.value] || '';
-            recalcTotal();
-        }
-
-        if (t.id === 'food_id_section3') {
-            var atSel = document.getElementById('award_type');
-            if (!(atSel && AWARD_AMOUNTS[atSel.value])) {
-                var opt3 = t.selectedOptions[0];
-                var el3b = document.getElementById('amount_section3');
-                if (el3b) el3b.value = opt3 ? (parseFloat(opt3.dataset.amount) || '') : '';
+        // Remove
+        div.querySelector('.remove-member-btn').addEventListener('click', function () {
+            if (membersContainer.querySelectorAll('.member-block').length > 1) {
+                div.remove();
+                reindexMembers();
+                recalcTotal();
+            } else {
+                alert('At least one member is required.');
             }
-            recalcTotal();
-        }
-    });
-
-    /* ── 9. Remove button ─────────────────────────────────────────── */
-    document.addEventListener('click', function (e) {
-        var btn = e.target.closest('.remove-member');
-        if (!btn) return;
-        var block     = btn.closest('.member-block');
-        if (!block) return;
-        var container = document.getElementById('members_container');
-
-        if (container.querySelectorAll('.member-block').length <= 1) {
-            // Last block — just clear, don't remove
-            block.querySelectorAll('input:not([readonly])').forEach(function (i) { i.value = ''; });
-            block.querySelectorAll('select').forEach(function (s) { s.selectedIndex = 0; });
-            var af = block.querySelector('.amount-field');
-            if (af) af.value = '';
-            recalcTotal();
-            return;
-        }
-        block.remove();
-        renumber();
-        recalcTotal();
-    });
-
-    /* ── 10. Add Member — clone Blade-rendered hidden template ────── */
-    document.getElementById('add_member').addEventListener('click', function () {
-        var container = document.getElementById('members_container');
-        var template  = document.querySelector('#member_template .member-block');
-        if (!container || !template) return;
-
-        var newIndex = container.querySelectorAll('.member-block').length;
-
-        // Deep clone the Blade-rendered template (has correct select options)
-        var newBlock = template.cloneNode(true);
-
-        // Replace all __IDX__ placeholders in name attributes AND id attributes
-        newBlock.querySelectorAll('[name]').forEach(function (el) {
-            el.name = el.name.replace(/__IDX__/g, newIndex);
-        });
-        newBlock.querySelectorAll('[id]').forEach(function (el) {
-            el.id = el.id.replace(/__IDX__/g, newIndex);
         });
 
-        // Clear any values (template should be empty, but be safe)
-        newBlock.querySelectorAll('input:not([readonly])').forEach(function (el) { el.value = ''; });
-        newBlock.querySelectorAll('select').forEach(function (el) { el.selectedIndex = 0; });
-        newBlock.querySelectorAll('.amount-field').forEach(function (el) { el.value = ''; });
-
-        // Update label number
-        newBlock.setAttribute('data-index', newIndex);
-        var lbl = newBlock.querySelector('.member-label');
-        if (lbl) lbl.innerHTML = '<i class="mdi mdi-account mr-1"></i> Member #' + (newIndex + 1);
-
-        container.appendChild(newBlock);
-        updateBadge();
-        recalcTotal();
-
-        // Scroll + focus
-        newBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        var firstInput = newBlock.querySelector('input[type="text"]');
-        if (firstInput) setTimeout(function () { firstInput.focus(); }, 300);
-    });
-
-    /* ── 11. Repeatable awards (frontend only) ───────────────────── */
-    function updateAwardNumbers() {
-        document.querySelectorAll('#awards_container .award-block').forEach(function (blk, i) {
-            var num = blk.querySelector('.award-num'); if (num) num.textContent = (i + 2); // primary is #1
-            blk.setAttribute('data-idx', i);
-        });
+        return div;
     }
 
-    var addAwardBtn = document.getElementById('add_award');
-    if (addAwardBtn) {
-        addAwardBtn.addEventListener('click', function () {
-            var container = document.getElementById('awards_container');
-            var template  = document.getElementById('award_template');
-            if (!container || !template) return;
-            var newIdx = container.querySelectorAll('.award-block').length;
+    // Add initial member
+    membersContainer.appendChild(buildMemberBlock(memberIndex++));
 
-            // Clone template block
-            var proto = template.querySelector('.award-block');
-            if (!proto) return;
-            var clone = proto.cloneNode(true);
+    document.getElementById('add_member_btn').addEventListener('click', function () {
+        membersContainer.appendChild(buildMemberBlock(memberIndex++));
+        updateMemberBadge();
+    });
 
-            // Replace __IDX__ placeholder in name/id attributes
-            clone.querySelectorAll('[name]').forEach(function (el) {
-                el.name = el.name.replace(/__IDX__/g, newIdx);
+    // ════════════════════════════════════════════════════════════════
+    //  SECTION 3 — AWARDS
+    // ════════════════════════════════════════════════════════════════
+    var awardIndex = 0;
+    var awardsContainer = document.getElementById('awards_container');
+    var awardBadge = document.getElementById('award_count_badge');
+
+    function updateAwardBadge() {
+        var count = awardsContainer.querySelectorAll('.award-block').length;
+        awardBadge.textContent = count + (count === 1 ? ' Award' : ' Awards');
+    }
+
+    function reindexAwards() {
+        awardsContainer.querySelectorAll('.award-block').forEach(function (block, i) {
+            block.dataset.index = i;
+            block.querySelector('.block-label').innerHTML = '<i class="mdi mdi-trophy mr-1"></i> Award #' + (i + 1);
+            block.querySelectorAll('[name]').forEach(function (el) {
+                el.name = el.name.replace(/\[\d+\]/, '[' + i + ']');
             });
-            clone.querySelectorAll('[id]').forEach(function (el) {
-                el.id = el.id.replace(/__IDX__/g, newIdx);
-            });
+        });
+        updateAwardBadge();
+    }
 
-            // Replace __NUM__ text in inner HTML
-            clone.innerHTML = clone.innerHTML.replace(/__NUM__/g, newIdx + 2);
+    function buildAwardBlock(idx) {
+        var div = document.createElement('div');
+        div.className = 'award-block';
+        div.dataset.index = idx;
+        div.innerHTML = `
+            <div class="block-header">
+                <span class="block-label"><i class="mdi mdi-trophy mr-1"></i> Award #` + (idx + 1) + `</span>
+                <button type="button" class="btn-remove-row remove-award-btn" title="Remove Award">
+                    <i class="mdi mdi-trash-can-outline mr-1"></i> Remove
+                </button>
+            </div>
+            <div class="row">
+                <div class="col-md-2">
+                    <div class="form-group m-0">
+                        <label class="form-label">Member's Surname</label>
+                        <input type="text" class="form-control" name="award_member_surname[` + idx + `]" placeholder="Surname">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-group m-0">
+                        <label class="form-label">Member's Name</label>
+                        <input type="text" class="form-control" name="award_member_name[` + idx + `]" placeholder="Member's name">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-group m-0">
+                        <label class="form-label">Gender</label>
+                        <select name="award_gender[` + idx + `]" class="form-control">
+                            <option value="">— Select —</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-group m-0">
+                        <label class="form-label">Department</label>
+                        <input type="text" class="form-control" name="award_department[` + idx + `]" placeholder="Department">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-group m-0">
+                        <label class="form-label">Award Category</label>
+                        <input type="text" class="form-control" name="award_category[` + idx + `]" placeholder="Award Category">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-group m-0">
+                        <label class="form-label">Award Type</label>
+                        <select name="award_type[` + idx + `]" class="form-control award-type-field">
+                            <option value="">— Select —</option>
+                            <option value="certificate">Certificate</option>
+                            <option value="award">Award</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-2 mt-2">
+                    <div class="form-group m-0">
+                        <label class="form-label">Food</label>
+                        <select name="award_food_id[` + idx + `]" class="form-control award-food-field">
+                            ` + buildFoodOptions() + `
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-2 mt-2">
+                    <div class="form-group m-0">
+                        <label class="form-label">Amount (₹)
+                        </label>
+                        <input type="text" readonly class="form-control amount-field award-amount-field" name="award_amount[` + idx + `]" placeholder="0">
+                    </div>
+                </div>
+                <div class="col-md-2 mt-2">
+                    <div class="form-group m-0">
+                        <label class="form-label">Photo</label>
+                        <input type="file" class="form-control-file" name="award_photo[` + idx + `]" accept="image/*">
+                    </div>
+                </div>
+            </div>
+            <hr class="my-2">
+            <div class="form-group m-0">
+                <label class="form-label">Special Comment</label>
+                <textarea class="form-control" name="award_special_comment[` + idx + `]" rows="2"
+                          placeholder="Recognition note, achievements, etc."></textarea>
+            </div>`;
 
-            // Clear input values and reset selects
-            clone.querySelectorAll('input').forEach(function (inp) { inp.value = ''; });
-            clone.querySelectorAll('select').forEach(function (s) { s.selectedIndex = 0; });
+        // Award Type → Amount  (certificate=₹400, else ₹600)
+        div.querySelector('.award-type-field').addEventListener('change', function () {
+            div.querySelector('.award-amount-field').value = calcAwardAmount(this);
+            recalcTotal();
+        });
 
-            // Set dataset index and visible number
-            clone.setAttribute('data-idx', newIdx);
-            var num = clone.querySelector('.award-num');
-            if (num) num.textContent = (newIdx + 2);
+        // Remove
+        div.querySelector('.remove-award-btn').addEventListener('click', function () {
+            if (awardsContainer.querySelectorAll('.award-block').length > 1) {
+                div.remove();
+                reindexAwards();
+                recalcTotal();
+            } else {
+                alert('At least one award entry is required.');
+            }
+        });
 
-            container.appendChild(clone);
-            updateAwardNumbers();
-            clone.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return div;
+    }
+
+    // Add initial award
+    awardsContainer.appendChild(buildAwardBlock(awardIndex++));
+
+    document.getElementById('add_award_btn').addEventListener('click', function () {
+        awardsContainer.appendChild(buildAwardBlock(awardIndex++));
+        updateAwardBadge();
+    });
+
+    // ════════════════════════════════════════════════════════════════
+    //  Image Previews
+    // ════════════════════════════════════════════════════════════════
+    function previewImage(inputId, previewId) {
+        var input = document.getElementById(inputId);
+        var preview = document.getElementById(previewId);
+        if (!input || !preview) return;
+        input.addEventListener('change', function () {
+            var file = this.files[0];
+            if (file) {
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+    previewImage('company_logo', 'company_logo_preview');
+
+    var ssInput = document.querySelector('[name="screenshot_payment"]');
+    var ssPreview = document.getElementById('screenshot_preview');
+    if (ssInput && ssPreview) {
+        ssInput.addEventListener('change', function () {
+            var file = this.files[0];
+            if (file) {
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    ssPreview.src = e.target.result;
+                    ssPreview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
         });
     }
 
-    // Delegated click for removing extra award blocks
-    document.addEventListener('click', function (e) {
-        var btn = e.target.closest('.remove-award');
-        if (!btn) return;
-        var blk = btn.closest('.award-block'); if (!blk) return;
-        blk.remove();
-        updateAwardNumbers();
-        recalcTotal();
-    });
-
-    // Delegated change handling for extra award type / food to calculate amount
-    document.addEventListener('change', function (e) {
-        var t = e.target;
-        if (t.classList.contains('award-type-extra')) {
-            var blk = t.closest('.award-block');
-            var amt = blk.querySelector('.amount-section3-extra');
-            if (amt) amt.value = AWARD_AMOUNTS[t.value] || '';
-            recalcTotal();
-        }
-        if (t.classList.contains('food-section3-extra')) {
-            var blk = t.closest('.award-block');
-            var opt = t.selectedOptions[0];
-            var amt = blk.querySelector('.amount-section3-extra');
-            if (amt) amt.value = opt ? (parseFloat(opt.dataset.amount) || '') : '';
-            recalcTotal();
-        }
-    });
-
-    /* ── 12. Init ─────────────────────────────────────────────────── */
-    (function () {
-        var at  = document.getElementById('award_type');
-        var el3 = document.getElementById('amount_section3');
-        if (at && el3 && at.value && AWARD_AMOUNTS[at.value]) el3.value = AWARD_AMOUNTS[at.value];
-    })();
-
-    recalcTotal();
-    updateBadge();
-
-    // Initialize Bootstrap tooltips if available
-    if (window.jQuery && typeof jQuery.fn.tooltip === 'function') {
-        jQuery(function(){ jQuery('[data-toggle="tooltip"]').tooltip(); });
-    }
-
+    // Tooltips
+    if (typeof $ !== 'undefined') { $('[data-toggle="tooltip"]').tooltip(); }
 })();
 </script>
-@endpush
 
 @endsection

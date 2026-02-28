@@ -10,24 +10,22 @@ class Award extends Model
     protected $fillable = [
         'registration_id',
         'section3_description',
-        'award_name',
-        'first_name',
-        'last_name',
-        'award_type',
+        'surname',             
+        'first_name',          
+        'gender',
+        'department',           
+        'award_category',       
+        'award_type',           
         'photo_attached',
         'food_id',
-        'relation_id',
-        'amount_section3',
-        'amount',
-        'gender',
+        'amount',               
+        'special_comment',      
     ];
 
     protected $casts = [
-        'amount_section3' => 'decimal:2',
         'amount' => 'decimal:2',
     ];
 
-    // ---------- Relationships ----------
 
     public function registration(): BelongsTo
     {
@@ -37,10 +35,5 @@ class Award extends Model
     public function food(): BelongsTo
     {
         return $this->belongsTo(Food::class);
-    }
-
-    public function relation(): BelongsTo
-    {
-        return $this->belongsTo(Relation::class);
     }
 }
